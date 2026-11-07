@@ -1,0 +1,2 @@
+{# Uma linha com o que o adversário já fez na fase das táticas (sem dizer QUE tática escolheu). #}
+{% if v.tatica.adversario_pronto %}{{ v.adversario }} está pronto.{% elif v.tatica.adversario_escolheu %}{{ v.adversario }} já escolheu a tática.{% else %}{{ v.adversario }} ainda está a escolher a tática.{% endif %}

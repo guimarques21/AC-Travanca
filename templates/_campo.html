@@ -1,0 +1,31 @@
+{# O campo com os 7 jogadores nas posições da tática. Variável: lugares (lista de dicts, ver modo_offline._lugares).
+   Opcionais (modo online): url_trocar (para onde vai o pedido de troca) e campo_bloqueado (sem trocas).
+   Cada jogador é um botão: static/js/equipa.js faz a troca de dois jogadores sem recarregar a página
+   (assim a música não é interrompida). Aqui só há nomes e posições: nunca atributos nem força.
+   O "!" na bola marca um jogador fora da sua posição natural (e o contorno fica tracejado). #}
+<div class="relvado{% if campo_bloqueado %} relvado--bloqueado{% endif %}" id="relvado"{% if not campo_bloqueado %} data-trocar="{{ url_trocar if url_trocar is defined else url_for('offline.trocar') }}"{% endif %}>
+  {# Linhas do campo (baliza própria em baixo) #}
+  <svg class="relvado__linhas" viewBox="0 0 100 148" aria-hidden="true" focusable="false">
+    <g fill="none" stroke="currentColor" stroke-width="0.6">
+      <rect x="1" y="1" width="98" height="146"/>
+      <line x1="1" y1="74" x2="99" y2="74"/>
+      <circle cx="50" cy="74" r="12"/>
+      <rect x="22" y="1" width="56" height="26"/>
+      <rect x="36" y="1" width="28" height="10"/>
+      <rect x="22" y="117" width="56" height="30"/>
+      <rect x="36" y="137" width="28" height="10"/>
+    </g>
+    <circle cx="50" cy="74" r="0.9" fill="currentColor"/>
+  </svg>
+
+  {% for l in lugares %}
+    <button class="jogador{% if l.fora %} jogador--fora{% endif %}" type="button" data-posicao="{{ l.id }}"
+            aria-pressed="false" style="--x:{{ l.x }};--y:{{ l.y }}"{% if campo_bloqueado %} disabled{% endif %}>
+      <span class="jogador__bola" aria-hidden="true">{{ l.sigla }}<i class="jogador__aviso"{% if not l.fora %} hidden{% endif %}>!</i></span>
+      <span class="so-leitor">{{ l.posicao }}: </span>
+      <span class="jogador__nome">{{ l.jogador }}</span>
+      <span class="jogador__natural">{{ l.natural }}</span>
+      <span class="so-leitor jogador__so-fora"{% if not l.fora %} hidden{% endif %}>, fora de posição</span>
+    </button>
+  {% endfor %}
+</div>

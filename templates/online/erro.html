@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ titulo }} — AC Travanca{% endblock %}
+
+{% block conteudo %}
+<div class="cena">
+  {% include "_camisola.html" %}
+
+  <section class="coluna">
+    <h1 class="titulo titulo--medio">{{ titulo }}</h1>
+    <p class="lead">{{ mensagem }}</p>
+
+    <form method="post" action="{{ url_for('online.criar') }}">
+      <button class="botao" type="submit">
+        <span class="botao__nome">Criar uma sala</span>
+        <span class="botao__desc">e convidar um amigo</span>
+      </button>
+    </form>
+
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Voltar ao início</a>
+  </section>
+</div>
+{% endblock %}

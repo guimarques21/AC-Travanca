@@ -1,0 +1,38 @@
+{# Costas da camisola do AC Travanca. O nome é escrito por static/js/camisola.js (ao vivo, enquanto se escreve).
+   Variável esperada: nome (pode ser vazio). #}
+<div class="camisola" aria-hidden="true">
+  <svg viewBox="0 0 400 430" focusable="false">
+    <defs>
+      <pattern id="riscas" width="40" height="10" patternUnits="userSpaceOnUse">
+        <rect width="20" height="10" fill="#1b3fae"/>
+        <rect x="20" width="20" height="10" fill="#2247bd"/>
+      </pattern>
+      <linearGradient id="tecido" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffffff" stop-opacity=".10"/>
+        <stop offset="1" stop-color="#000000" stop-opacity=".24"/>
+      </linearGradient>
+    </defs>
+
+    <path id="corpo" fill="url(#riscas)"
+          d="M140 28 L70 58 L18 148 L72 178 L112 138 L112 392 Q200 404 288 392 L288 138 L328 178 L382 148 L330 58 L260 28 Q200 56 140 28 Z"/>
+    <path fill="url(#tecido)"
+          d="M140 28 L70 58 L18 148 L72 178 L112 138 L112 392 Q200 404 288 392 L288 138 L328 178 L382 148 L330 58 L260 28 Q200 56 140 28 Z"/>
+
+    {# Acabamentos amarelos: punhos, gola e bainha #}
+    <g fill="none" stroke="#ffcf1f" stroke-linecap="butt">
+      <path d="M18 148 L72 178" stroke-width="13"/>
+      <path d="M382 148 L328 178" stroke-width="13"/>
+      <path d="M140 28 Q200 56 260 28" stroke-width="10"/>
+      <path d="M112 392 Q200 404 288 392" stroke-width="7"/>
+    </g>
+
+    {# Linha tracejada onde vai o nome (desaparece quando já há nome) #}
+    <line id="camisola-guia" x1="125" x2="275" y1="150" y2="150"
+          stroke="#ffcf1f" stroke-opacity=".55" stroke-width="3" stroke-dasharray="8 8"/>
+    <text id="camisola-nome" class="camisola__nome" x="200" y="150" text-anchor="middle"
+          data-nome="{{ nome }}"></text>
+    {# textLength: os dois dígitos ficam sempre dentro do tronco, seja qual for a fonte que o browser use #}
+    <text class="camisola__numero" x="200" y="335" text-anchor="middle"
+          textLength="150" lengthAdjust="spacingAndGlyphs">67</text>
+  </svg>
+</div>

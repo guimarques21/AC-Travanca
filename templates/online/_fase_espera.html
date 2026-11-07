@@ -1,0 +1,19 @@
+<div class="cena cena--una" data-anuncio="À espera do adversário.">
+  <section class="coluna">
+    <h1 class="titulo titulo--pequeno">Convida um amigo</h1>
+    <p class="lead">Envia este link ao teu adversário. Quando ele entrar, o sorteio dos jogadores começa logo.</p>
+
+    <div class="convite" data-convite="{{ url_convite }}">
+      <label class="so-leitor" for="convite-link">Link de convite</label>
+      <input class="convite__link" id="convite-link" type="text" readonly value="{{ convite_externo }}">
+      <div class="convite__botoes">
+        <button class="botao botao--secundario" type="button" data-copiar>Copiar link</button>
+        <button class="botao botao--secundario" type="button" data-partilhar hidden>Partilhar…</button>
+      </div>
+      <p class="convite__estado" id="convite-estado" role="status"></p>
+    </div>
+
+    <p class="espera"><span class="espera__pontos" aria-hidden="true"><i></i><i></i><i></i></span> À espera do adversário…</p>
+    <p class="nota">O link serve para uma só pessoa: quem entrar primeiro fica com o lugar. Podes fechar esta página e voltar mais tarde, a sala fica guardada durante umas horas.</p>
+  </section>
+</div>

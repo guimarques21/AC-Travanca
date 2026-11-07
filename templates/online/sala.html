@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block titulo %}Sala online — AC Travanca{% endblock %}
+
+{% block classe_corpo %}pagina-lista pagina-sala{% endblock %}
+
+{% block conteudo %}
+{# A página toda carrega uma vez; depois o painel (#painel) troca-se sozinho quando algo muda (static/js/sala.js). #}
+<div class="sala" id="sala" data-sala="{{ sala_id }}" data-url-estado="{{ url_estado }}" data-url-acao="{{ url_acao }}"
+     data-assinatura="{{ assinatura }}" data-tempo-real="{{ 1 if tempo_real else 0 }}">
+
+  <header class="sala__topo">
+    <p class="sala__quem">
+      <span class="sala__tu">{{ nome }}</span>
+      <span class="presenca{% if presenca.ligado %} presenca--ligado{% endif %}" id="presenca"{% if not presenca.adversario %} hidden{% endif %}>
+        <i class="presenca__ponto" aria-hidden="true"></i>
+        <span id="presenca-texto">{% if presenca.adversario %}{{ presenca.adversario }}: {{ "ligado" if presenca.ligado else "sem ligação" }}{% endif %}</span>
+      </span>
+    </p>
+    <button class="link-discreto sala__sair" type="button" id="sair" data-acao="sair">Sair da sala</button>
+  </header>
+
+  <p class="sala__aviso" id="aviso" role="alert" hidden></p>
+  <p class="so-leitor" id="anuncio" role="status" aria-live="polite"></p>
+
+  <div class="sala__painel" id="painel">{{ painel|safe }}</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_v('js/equipa.js') }}" defer></script>
+<script src="{{ static_v('js/filme.js') }}" defer></script>
+<script src="{{ static_v('js/cena.js') }}" defer></script>
+<script src="{{ static_v('js/jogo_visual.js') }}" defer></script>
+<script src="{{ static_v('js/sala.js') }}" defer></script>
+{% endblock %}

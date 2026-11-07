@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block titulo %}Jogar online — AC Travanca{% endblock %}
+
+{% block conteudo %}
+<div class="cena">
+  {% include "_camisola.html" %}
+
+  <section class="coluna">
+    <h1 class="titulo titulo--medio">Jogar online</h1>
+    <p class="lead">{{ nome }}, desafia um amigo para um jogo de 2 treinadores.</p>
+
+    <ol class="passos">
+      <li>Crias uma sala e recebes um <strong>link único</strong>.</li>
+      <li>Envias o link ao teu adversário. Quando ele entrar, o sorteio começa.</li>
+      <li>Escolhem os 7 jogadores <strong>à vez</strong> e depois a tática de cada um.</li>
+    </ol>
+
+    <form method="post" action="{{ url_for('online.criar') }}">
+      <button class="botao" type="submit">
+        <span class="botao__nome">Criar sala</span>
+        <span class="botao__desc">e convidar um amigo</span>
+      </button>
+    </form>
+
+    {% if em_curso %}
+      <h2 class="ficha__titulo ficha__titulo--solto">As tuas salas</h2>
+      <ul class="salas-em-curso">
+        {% for s in em_curso %}
+          <li>
+            <a class="voltar voltar--pequeno" href="{{ url_for('online.sala', sala_id=s.id) }}">
+              {% if s.espera %}Sala à espera de adversário{% else %}Continuar contra {{ s.adversario }}{% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Voltar ao início</a>
+  </section>
+</div>
+{% endblock %}

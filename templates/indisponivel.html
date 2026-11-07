@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block titulo %}Já volto — AC Travanca{% endblock %}
+
+{% block conteudo %}
+<div class="cena">
+  {% include "_camisola.html" %}
+
+  <section class="coluna">
+    <h1 class="titulo titulo--medio">Já volto</h1>
+    <p class="lead">A classificação geral não respondeu agora. Costuma voltar em poucos segundos: tenta outra vez.</p>
+
+    <button class="botao" type="button" onclick="window.location.reload()">
+      <span class="botao__nome">Tentar outra vez</span>
+    </button>
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Voltar ao início</a>
+  </section>
+</div>
+{% endblock %}

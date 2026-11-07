@@ -1,0 +1,13 @@
+<div class="cena cena--una" data-anuncio="A sala foi fechada.">
+  <section class="coluna">
+    <h1 class="titulo titulo--pequeno">{% if v.adversario %}{{ v.adversario }} saiu da sala{% else %}A sala foi fechada{% endif %}</h1>
+    <p class="lead">Este jogo terminou. Podes criar uma sala nova e convidar outra pessoa.</p>
+    <form method="post" action="{{ url_for('online.criar') }}">
+      <button class="botao" type="submit">
+        <span class="botao__nome">Criar uma sala</span>
+        <span class="botao__desc">e convidar um amigo</span>
+      </button>
+    </form>
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Voltar ao início</a>
+  </section>
+</div>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block titulo %}A tua liga — AC Travanca{% endblock %}
+
+{% block classe_corpo %}pagina-lista{% endblock %}
+
+{% block conteudo %}
+{% macro pl(n, um, varios) %}{{ n }} {{ um if n == 1 else varios }}{% endmacro %}
+{% set r = liga.resumo %}
+<div class="cena cena--liga">
+  <section class="liga" id="liga">
+    {# Antes de pintar: se esta liga ainda não foi vista, os jogos aparecem um a um (liga.js). Sem JavaScript, aparecem todos. #}
+    <script>
+      (function () {
+        var secao = document.currentScript.parentElement;
+        try { if (sessionStorage.getItem('liga-vista-{{ liga_id }}')) return; } catch (e) {}
+        secao.classList.add('liga--animar');
+        // Rede de segurança: se o script da página falhar, mostra tudo passados 4 segundos.
+        setTimeout(function () { if (!window.__ligaPronta) secao.classList.remove('liga--animar'); }, 4000);
+      })();
+    </script>
+
+    <h1 class="titulo titulo--pequeno">A tua liga</h1>
+    <p class="lead">{{ liga.jogos|length }} jornadas: 2 jogos contra cada uma das {{ liga.jogos|length // 2 }} equipas adversárias.</p>
+
+
+    <ol class="jogos" id="jogos" data-liga="{{ liga_id }}">
+      {% for j in liga.jogos %}
+        <li class="jogo jogo--{{ j.resultado }}" data-res="{{ j.resultado }}" data-pts="{{ j.pontos }}">
+          <span class="jogo__jornada">J{{ j.jornada }}</span>
+          <span class="jogo__placar">
+            <span class="jogo__equipa jogo__equipa--casa{% if j.casa == liga.equipa %} jogo__equipa--nossa{% endif %}">{{ j.casa }}</span>
+            <strong class="jogo__golos"><span class="jogo__g jogo__g--casa">{{ j.golos_casa }}</span><span class="jogo__sep"> – </span><span class="jogo__g jogo__g--fora">{{ j.golos_fora }}</span></strong>
+            <span class="jogo__equipa jogo__equipa--fora{% if j.fora == liga.equipa %} jogo__equipa--nossa{% endif %}">{{ j.fora }}</span>
+          </span>
+          <span class="jogo__res jogo__res--{{ j.resultado }}">
+            <span class="so-leitor">{{ {"V": "Vitória", "E": "Empate", "D": "Derrota"}[j.resultado] }}</span>
+            <span aria-hidden="true">{{ j.resultado }}</span>
+          </span>
+          <span class="jogo__marcadores">
+            {% if j.marcadores %}
+              Marcadores: {% for g in j.marcadores %}{{ g.nome }} {{ g.minuto }}′{% if not loop.last %}, {% endif %}{% endfor %}
+            {% else %}
+              Sem golos nossos
+            {% endif %}
+          </span>
+        </li>
+      {% endfor %}
+    </ol>
+
+    <p class="liga__fim" id="fim-liga" role="status">
+      Liga terminada: {{ pl(r.pontos, "ponto", "pontos") }}, {{ pl(r.vitorias, "vitória", "vitórias") }}, {{ pl(r.empates, "empate", "empates") }} e {{ pl(r.derrotas, "derrota", "derrotas") }}.
+    </p>
+
+    {# Barra sempre à vista em baixo: o registo vai subindo e os botões nunca ficam longe, por mais jogos que haja. #}
+    <div class="liga__barra">
+      <p class="liga__resumo" id="resumo-liga" aria-live="off">
+        <span><b id="r-jogos">{{ liga.jogos|length }}</b> <span id="r-jogos-txt">{{ "jogo" if liga.jogos|length == 1 else "jogos" }}</span></span>
+        <span><b id="r-v">{{ liga.resumo.vitorias }}</b> V</span>
+        <span><b id="r-e">{{ liga.resumo.empates }}</b> E</span>
+        <span><b id="r-d">{{ liga.resumo.derrotas }}</b> D</span>
+        <span><b id="r-pts">{{ r.pontos }}</b> <span id="r-pts-txt">{{ "ponto" if r.pontos == 1 else "pontos" }}</span></span>
+      </p>
+      <div class="liga__acoes">
+        <button class="botao botao--secundario" type="button" id="saltar">Saltar para o fim</button>
+        <a class="botao" id="ver-tabela" href="{{ url_for('offline.classificacao') }}">
+          <span class="botao__nome">Ver classificação</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_v('js/liga.js') }}" defer></script>
+{% endblock %}

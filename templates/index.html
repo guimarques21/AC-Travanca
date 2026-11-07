@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block titulo %}AC Travanca — gestão de futebol de 7{% endblock %}
+
+{% block conteudo %}
+<div class="cena">
+  {% include "_camisola.html" %}
+
+  <section class="coluna">
+    <h1 class="titulo">AC Travanca</h1>
+    <p class="lead">Escolhe 7 jogadores no sorteio, define a tática e leva a equipa ao topo da tabela.</p>
+    {% if convite %}
+      <p class="convite-aviso" role="status">Foste convidado para um jogo online. Escreve o teu nome e escolhe «Jogar Online».</p>
+    {% endif %}
+
+    {# novalidate: as mensagens são nossas (home.js no browser, app.py no servidor — a mesma regra nos dois). #}
+    <form id="form-entrada" class="form" method="post" action="{{ url_for('entrar') }}" novalidate
+          data-min="{{ nome_min }}" data-max="{{ nome_max }}"
+          data-msg-curto="{{ mensagens.curto }}" data-msg-caracteres="{{ mensagens.caracteres }}">
+
+      <label class="form__label" for="campo-nome">O teu nome</label>
+      {# SEM placeholder e SEM valor sugerido: o nome tem de ser escrito pelo jogador. #}
+      <input class="form__campo" id="campo-nome" name="nome" type="text" value="{{ nome }}"
+             required maxlength="{{ nome_max }}" autocomplete="off" autocapitalize="words"
+             spellcheck="false" enterkeyhint="go"
+             aria-describedby="ajuda-nome erro-nome" aria-invalid="{{ 'true' if erro else 'false' }}">
+      <p class="form__ajuda" id="ajuda-nome">Aparece na tua camisola e no top 10 dos treinadores.</p>
+
+      {# Zona reservada: com JS, o erro e os botões de modo ocupam o MESMO espaço (nunca aparecem os dois),
+         por isso o formulário não "salta" enquanto se escreve. #}
+      <div class="zona">
+      <p class="form__erro" id="erro-nome" role="alert"{% if not erro %} hidden{% endif %}>{{ erro or "" }}</p>
+
+      {# Os dois modos só aparecem (e só se podem usar) depois de um nome válido — ver home.js #}
+      <div class="acoes" id="acoes" data-aberto="false" role="group" aria-label="Modo de jogo">
+        <div class="acoes__miolo">
+          <button class="tile tile--offline" type="submit" name="modo" value="offline">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 7.5l3.8 2.8-1.45 4.4h-4.7L8.2 10.3z"/>
+              <path d="M12 7.5V2.2M15.8 10.3l5-1.7M14.35 14.7l3.1 4.3M9.65 14.7l-3.1 4.3M8.2 10.3l-5-1.7"/>
+            </svg>
+            <span>
+              <span class="tile__nome">Jogar Offline</span>
+              <span class="tile__desc">Liga a solo contra as outras equipas</span>
+            </span>
+          </button>
+
+          <button class="tile tile--online" type="submit" name="modo" value="online">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            <span>
+              <span class="tile__nome">Jogar Online</span>
+              <span class="tile__desc">Desafia um amigo através de um link</span>
+            </span>
+          </button>
+        </div>
+      </div>
+      </div>{# /zona #}
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_v('js/home.js') }}" defer></script>
+{% endblock %}

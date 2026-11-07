@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block titulo %}A tua equipa — AC Travanca{% endblock %}
+
+{% block classe_corpo %}pagina-lista pagina-campo{% endblock %}
+
+{% block conteudo %}
+<div class="cena cena--campo">
+
+  <header class="cabecalho">
+    <h1 class="titulo titulo--pequeno">Equipa pronta</h1>
+    <p class="tatica-atual">
+      <span>{{ tatica.nome }} · <strong>{{ tatica.esquema }}</strong></span>
+      <a class="voltar voltar--pequeno" href="{{ url_for('offline.tatica') }}">Mudar de tática</a>
+    </p>
+    <p class="dica" id="dica" role="status" data-padrao="Toca num jogador e depois noutro para trocarem de posição.">
+      Toca num jogador e depois noutro para trocarem de posição.
+    </p>
+  </header>
+
+  <section class="campo-zona" aria-label="Campo, {{ tatica.nome }}">
+    {% include "_campo.html" %}
+  </section>
+
+  <footer class="rodape">
+    {# A liga só se simula uma vez: depois disto a equipa já não muda (senão bastava repetir até sair um bom resultado). #}
+    <form class="comecar" method="post" action="{{ url_for('offline.comecar_liga') }}">
+      <button class="botao" type="submit">
+        <span class="botao__nome">Começar a liga</span>
+        <span class="botao__desc">{{ 2 * adversarios }} jogos contra {{ adversarios }} equipas</span>
+      </button>
+    </form>
+    <p class="nota"><span class="nota__marca" aria-hidden="true">!</span> Um jogador fora da sua posição natural rende menos. Depois de começares a liga, a equipa já não muda.</p>
+    <div class="camisola-lateral">{% include "_camisola.html" %}</div>
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Recomeçar do início</a>
+  </footer>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ static_v('js/equipa.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,23 @@
+# Blueprint do Render (opcional): New + > Blueprint e escolhe o repositório.
+# Se preferires configurar à mão no painel:
+#   Build Command: pip install -r requirements.txt
+#   Start Command: gunicorn -k gthread -w 1 --threads 100 --bind 0.0.0.0:$PORT app:app
+#   Environment:   SECRET_KEY = (qualquer texto longo e aleatório)
+services:
+  - type: web
+    name: ac-travanca
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # UM só processo (-w 1) com várias threads: as salas do modo online vivem na memória do processo.
+    startCommand: gunicorn -k gthread -w 1 --threads 100 --bind 0.0.0.0:$PORT app:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      # O Top 10 de todos os utilizadores fica guardado numa base de dados PostgreSQL gratuita e externa
+      # (por exemplo, no Neon): o disco do Render gratuito é apagado a cada reinício, a base de dados não.
+      # O endereço (com a palavra-passe) NÃO se escreve aqui: o Render pede-o no painel
+      # (Environment -> DATABASE_URL). Passo a passo no README, em «Top 10 guardado para sempre».
+      - key: DATABASE_URL
+        sync: false

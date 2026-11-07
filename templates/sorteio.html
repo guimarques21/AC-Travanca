@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block titulo %}Sorteio — AC Travanca{% endblock %}
+
+{% block classe_corpo %}pagina-lista{% endblock %}
+
+{% block conteudo %}
+<div class="cena cena--sorteio">
+
+  {# Primeiro no HTML = primeiro no telemóvel: o que o jogador tem de fazer agora. #}
+  <section class="coluna">
+    <h1 class="titulo titulo--pequeno">
+      {% if numero == tamanho %}Escolhe o teu {{ numero }}.º e último jogador{% else %}Escolhe o teu {{ numero }}.º jogador{% endif %}
+    </h1>
+    <p class="lead">Sorteámos {{ opcoes|length }} jogadores. Escolhe um: os outros podem voltar a aparecer nos próximos sorteios.</p>
+    {# Só no telemóvel (a lista completa fica abaixo do ecrã): um resumo do que já foi escolhido. #}
+    {% if equipa %}<p class="resumo-equipa" aria-hidden="true">Já tens: {{ equipa|join(", ") }}.</p>{% endif %}
+
+    <form class="opcoes" method="post" action="{{ url_for('offline.escolher') }}">
+      {% for nome in opcoes %}
+        <button class="opcao" type="submit" name="jogador" value="{{ nome }}"
+                aria-label="Escolher {{ nome }}, {{ posicoes[nome]|replace('/', ' / ') }}">
+          <span class="opcao__nome">{{ nome }}</span>
+          <span class="opcao__posicao">{{ posicoes[nome]|replace("/", " / ") }}</span>
+        </button>
+      {% endfor %}
+    </form>
+
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Recomeçar do início</a>
+  </section>
+
+  <aside class="coluna ficha" aria-label="A tua equipa">
+    {% include "_ficha_equipa.html" %}
+  </aside>
+
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{# O fim do jogo, visto por QUEM pede (variável fim: ver modo_online._fim_do_jogo). Só nomes, golos e estatísticas de jogo.
+   Antes do resultado vem a SIMULAÇÃO VISUAL (Passo 8): o resultado e as estatísticas só aparecem quando ela acaba
+   (ou quando o jogador salta para o fim), para não estragar a surpresa. Sem JavaScript mostra-se logo tudo. #}
+{% set eu = fim.equipas[0] %}
+{% set adv = fim.equipas[1] %}
+{% set titulos = {"vitoria": "Ganhaste!", "derrota": "Perdeste", "empate": "Empate"} %}
+<div class="cena cena--fim cena--visual" id="cena-fim"
+     data-anuncio="O jogo está pronto. Vê a simulação ou salta para o resultado."
+     data-resultado="Fim do jogo. {{ titulos[fim.resultado] }} {{ eu.treinador }} {{ fim.placar[0] }}, {{ adv.treinador }} {{ fim.placar[1] }}.">
+
+  {% include "online/_visual.html" %}
+
+  <div class="fim__corpo">
+  <header class="fim__topo">
+    <p class="fim__etiqueta">Fim do jogo · 2 × 25 minutos</p>
+    <h1 class="titulo titulo--pequeno fim__titulo fim__titulo--{{ fim.resultado }}">{{ titulos[fim.resultado] }}</h1>
+
+    <div class="fim__placar" role="group" aria-label="Resultado final: {{ eu.treinador }} {{ fim.placar[0] }}, {{ adv.treinador }} {{ fim.placar[1] }}">
+      <div class="fim__lado fim__lado--eu">
+        <span class="fim__treinador">{{ eu.treinador }}</span>
+        <span class="fim__marca">tu</span>
+        <span class="fim__esquema">{{ eu.esquema }} · {{ eu.estilo_nome }}</span>
+      </div>
+      <div class="fim__golos" aria-hidden="true">
+        <span class="fim__n fim__n--eu">{{ fim.placar[0] }}</span>
+        <span class="fim__traco">–</span>
+        <span class="fim__n fim__n--adv">{{ fim.placar[1] }}</span>
+      </div>
+      <div class="fim__lado fim__lado--adv">
+        <span class="fim__treinador">{{ adv.treinador }}</span>
+        <span class="fim__esquema">{{ adv.esquema }} · {{ adv.estilo_nome }}</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="fim__bloco" aria-labelledby="fim-marcadores">
+    <h2 class="fim__h2" id="fim-marcadores">Golos</h2>
+    <div class="fim__marcadores">
+      {% for lado in (0, 1) %}
+      <ul class="fim__lista fim__lista--{{ 'eu' if lado == 0 else 'adv' }}" aria-label="Golos de {{ fim.equipas[lado].treinador }}">
+        {% for g in fim.marcadores[lado] %}
+        <li><span class="fim__min">{{ g.minuto }}'</span> <strong>{{ g.jogador }}</strong>{% if g.como %} <span class="fim__como">{{ g.como }}</span>{% endif %}{% if g.assistencia %} <span class="fim__como">(assistência de {{ g.assistencia }})</span>{% endif %}</li>
+        {% else %}
+        <li class="fim__vazio">Sem golos</li>
+        {% endfor %}
+      </ul>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="fim__bloco" aria-labelledby="fim-estatisticas">
+    <h2 class="fim__h2" id="fim-estatisticas">Estatísticas</h2>
+    <table class="estat">
+      <caption class="so-leitor">Estatísticas do jogo: {{ eu.treinador }} (tu) contra {{ adv.treinador }}</caption>
+      <thead class="so-leitor"><tr><th scope="col">{{ eu.treinador }} (tu)</th><th scope="col">Estatística</th><th scope="col">{{ adv.treinador }}</th></tr></thead>
+      <tbody>
+        {% for l in fim.principais %}
+        <tr class="estat__linha">
+          <td class="estat__v estat__v--eu">{{ l.eu }}</td>
+          <th scope="row" class="estat__rotulo">{{ l.rotulo }}<span class="estat__barra" style="--p:{{ l.pc_eu }}" aria-hidden="true"><i></i></span></th>
+          <td class="estat__v estat__v--adv">{{ l.adv }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <details class="fim__mais">
+      <summary>Mais números</summary>
+      <table class="estat estat--extra">
+        <caption class="so-leitor">Mais números do jogo</caption>
+        <tbody>
+          {% for l in fim.extras %}
+          <tr class="estat__linha">
+            <td class="estat__v estat__v--eu">{{ l.eu }}</td>
+            <th scope="row" class="estat__rotulo">{{ l.rotulo }}<span class="estat__barra" style="--p:{{ l.pc_eu }}" aria-hidden="true"><i></i></span></th>
+            <td class="estat__v estat__v--adv">{{ l.adv }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+  </section>
+
+  <section class="fim__bloco" aria-labelledby="fim-equipas">
+    <h2 class="fim__h2" id="fim-equipas">As duas equipas</h2>
+    <p class="nota fim__nota">Agora que o jogo acabou, já se pode ver como cada um jogou.</p>
+    <div class="fim__equipas">
+      {% for e in (eu, adv) %}
+      <div class="fim__equipa fim__equipa--{{ 'eu' if loop.first else 'adv' }}">
+        <h3 class="fim__h3">{{ e.treinador }}{% if loop.first %} (tu){% endif %} <span>{{ e.esquema }} · {{ e.estilo_nome }}</span></h3>
+        <ul class="fim__jogadores">
+          {% for j in e.jogadores %}
+          <li><span class="fim__jnome">{{ j.nome }}</span> <span class="fim__jpos">{{ j.posicao }} · {{ j.funcao_nome }}</span>
+            {% if j.nome == e.livres %}<span class="fim__etq">livres</span>{% endif %}{% if j.nome == e.cantos %}<span class="fim__etq">cantos</span>{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="fim__bloco" aria-labelledby="fim-relato">
+    <h2 class="fim__h2" id="fim-relato">Relato do jogo</h2>
+    <details class="fim__mais">
+      <summary>Ver os lances principais ({{ fim.relato|length }})</summary>
+      <ol class="relato">
+        {% for r in fim.relato %}
+        <li class="relato__linha relato__linha--{{ r.tipo }}"><span class="relato__min">{{ r.min }}'</span> {{ r.texto }}</li>
+        {% endfor %}
+      </ol>
+    </details>
+  </section>
+
+  <footer class="rodape fim__rodape">
+    <form method="post" action="{{ url_for('online.criar') }}">
+      <button class="botao" type="submit">
+        <span class="botao__nome">Jogar outra vez</span>
+        <span class="botao__desc">cria uma sala nova</span>
+      </button>
+    </form>
+    <a class="voltar" href="{{ url_for('inicio') }}">Voltar ao início</a>
+  </footer>
+  </div>
+</div>

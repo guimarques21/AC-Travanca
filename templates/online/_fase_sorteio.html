@@ -1,0 +1,37 @@
+{% set numero = v.equipa|length + 1 %}
+<div class="cena cena--sorteio"
+     data-anuncio="{% if v.sorteio.minha_vez %}É a tua vez de escolher.{% else %}{{ v.adversario }} está a escolher.{% endif %}"
+     data-minha-vez="{{ 1 if v.sorteio.minha_vez else 0 }}">
+
+  <section class="coluna">
+    {% if v.sorteio.minha_vez %}
+      <h1 class="titulo titulo--pequeno">
+        {% if numero == tamanho %}Escolhe o teu {{ numero }}.º e último jogador{% else %}Escolhe o teu {{ numero }}.º jogador{% endif %}
+      </h1>
+      <p class="lead">Sorteámos {{ v.sorteio.oferta|length }} jogadores. Escolhe um: os outros podem voltar a aparecer. Um jogador escolhido por qualquer um dos dois não aparece mais.</p>
+      <div class="opcoes">
+        {% for nome_j in v.sorteio.oferta %}
+          <button class="opcao" type="button" data-acao="escolher" data-jogador="{{ nome_j }}"
+                  aria-label="Escolher {{ nome_j }}, {{ posicoes[nome_j]|replace('/', ' / ') }}">
+            <span class="opcao__nome">{{ nome_j }}</span>
+            <span class="opcao__posicao">{{ posicoes[nome_j]|replace("/", " / ") }}</span>
+          </button>
+        {% endfor %}
+      </div>
+    {% else %}
+      <h1 class="titulo titulo--pequeno">{{ v.adversario }} está a escolher</h1>
+      <p class="lead">Quando ele escolher, é a tua vez. Escolhem à vez, até cada um ter {{ tamanho }} jogadores.</p>
+      <p class="espera"><span class="espera__pontos" aria-hidden="true"><i></i><i></i><i></i></span> A aguardar a escolha de {{ v.adversario }}…</p>
+    {% endif %}
+    <p class="nota">{% if v.sorteio.comeco_eu %}Começaste tu a escolher (foi sorteado).{% else %}{{ v.adversario }} começou a escolher (foi sorteado).{% endif %}</p>
+  </section>
+
+  <aside class="coluna ficha-dupla" aria-label="As equipas">
+    <div class="ficha">
+      {% with equipa=v.equipa, titulo="A tua equipa", nova_escolha=(not v.sorteio.minha_vez) %}{% include "_ficha_equipa.html" %}{% endwith %}
+    </div>
+    <div class="ficha ficha--adversario">
+      {% with equipa=v.equipa_adversario, titulo="Equipa de " ~ v.adversario, nova_escolha=v.sorteio.minha_vez %}{% include "_ficha_equipa.html" %}{% endwith %}
+    </div>
+  </aside>
+</div>

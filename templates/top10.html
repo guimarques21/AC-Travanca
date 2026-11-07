@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block titulo %}Top 10 — AC Travanca{% endblock %}
+
+{% block classe_corpo %}pagina-lista{% endblock %}
+
+{% block conteudo %}
+<div class="cena cena--liga">
+  <section class="liga">
+    <h1 class="titulo titulo--pequeno">Top 10 de todos os utilizadores</h1>
+    <p class="lead">
+      Esta tabela já não é a da liga: junta os melhores resultados de <strong>todos os utilizadores que já jogaram
+      o modo offline</strong> ({{ total }} {{ "liga jogada" if total == 1 else "ligas jogadas" }}).
+    </p>
+
+    <div class="tabela-caixa">
+      <table class="tabela tabela--top">
+        <caption class="so-leitor">Top 10 de todos os utilizadores</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col" class="tabela__equipa">Treinador</th>
+            <th scope="col" title="Pontos">Pts</th>
+            <th scope="col" title="Saldo de golos">SG</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in top %}
+            <tr{% if l.id == liga_id %} class="tabela__nossa" aria-current="true"{% endif %}>
+              <td>{{ l.posicao }}</td>
+              <th scope="row" class="tabela__equipa">{{ l.nome }}{% if l.id == liga_id %} <span class="tabela__tu">(tu)</span>{% endif %}</th>
+              <td class="tabela__pts">{{ l.pontos }}</td>
+              <td>{{ ("+" ~ l.saldo) if l.saldo > 0 else l.saldo }}</td>
+            </tr>
+          {% endfor %}
+          {% if fora_do_top and minha %}
+            <tr class="tabela__separador" aria-hidden="true"><td colspan="4">⋯</td></tr>
+            <tr class="tabela__nossa" aria-current="true">
+              <td>{{ minha.posicao }}</td>
+              <th scope="row" class="tabela__equipa">{{ minha.nome }} <span class="tabela__tu">(tu)</span></th>
+              <td class="tabela__pts">{{ minha.pontos }}</td>
+              <td>{{ ("+" ~ minha.saldo) if minha.saldo > 0 else minha.saldo }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if minha %}
+      <p class="liga__fim liga__fim--visivel">
+        {% if fora_do_top %}
+          A tua liga ficou em <strong>{{ minha.posicao }}.º</strong> entre {{ total }}.
+        {% else %}
+          A tua liga está no Top 10, em <strong>{{ minha.posicao }}.º</strong> lugar!
+        {% endif %}
+      </p>
+    {% endif %}
+    <p class="nota">Pontos, depois saldo de golos (SG), depois golos marcados. Em caso de empate total fica à frente quem jogou primeiro.</p>
+
+    <div class="liga__acoes liga__acoes--fim">
+      <form method="post" action="{{ url_for('offline.novo_jogo') }}">
+        <button class="botao" type="submit">
+          <span class="botao__nome">Jogar outra vez</span>
+          <span class="botao__desc">novo sorteio, com o mesmo nome</span>
+        </button>
+      </form>
+      <a class="botao botao--secundario" href="{{ url_for('offline.classificacao') }}">Voltar à classificação</a>
+    </div>
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Voltar ao início</a>
+  </section>
+</div>
+{% endblock %}

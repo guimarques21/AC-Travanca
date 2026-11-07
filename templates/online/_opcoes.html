@@ -1,0 +1,60 @@
+{# Funções, estilo de jogo e bolas paradas (Passo 6). Variável: o (ver modo_online._opcoes): só nomes e descrições.
+   Dentro de <section id="opcoes"> em _fase_taticas.html; o /trocar devolve só este bocado para o campo e a lista
+   ficarem sempre iguais. Os botões usam data-acao (funcao, estilo, livres, cantos) e o sala.js trata do resto.
+   Com «Estou pronto» tudo fica só para ver (botões desativados). #}
+{% set bloqueado = v.tatica.pronto %}
+<div class="grupo">
+  <h2 class="grupo__titulo" id="o-estilo">Estilo de jogo{% if not o.estilo %} <span class="grupo__falta">obrigatório</span>{% endif %}</h2>
+  <div class="chips" role="group" aria-labelledby="o-estilo">
+    {% for e in o.estilos %}
+      <button class="chip" type="button" data-acao="estilo" data-estilo="{{ e.id }}" aria-pressed="{{ 'true' if o.estilo and e.id == o.estilo.id else 'false' }}"{% if bloqueado %} disabled{% endif %}>{{ e.nome }}</button>
+    {% endfor %}
+  </div>
+  {% if o.estilo %}
+    <p class="grupo__desc"><strong>{{ o.estilo.nome }}:</strong> {{ o.estilo.descricao }}</p>
+  {% else %}
+    <p class="grupo__desc" data-falta-estilo="1">Escolhe como a tua equipa vai jogar: é a ideia de jogo que os teus jogadores seguem do primeiro ao último minuto. Toca num estilo para ver o que significa.</p>
+  {% endif %}
+</div>
+
+<div class="grupo">
+  <h2 class="grupo__titulo">Função de cada jogador</h2>
+  <p class="grupo__nota">Toca num jogador para ver as funções que ele pode ter nesta posição.</p>
+  <div class="funcoes">
+    {% for f in o.funcoes %}
+      <details class="funcao" data-slot="{{ f.posicao }}">
+        <summary class="funcao__resumo">
+          <span class="funcao__bola" aria-hidden="true">{{ f.sigla }}</span>
+          <span class="funcao__quem"><strong>{{ f.jogador }}</strong><span class="funcao__posicao">{{ f.nome_posicao }}</span></span>
+          <span class="funcao__atual"><span class="so-leitor">Função: </span>{{ f.escolhida.nome }}</span>
+        </summary>
+        <div class="funcao__corpo">
+          <div class="chips" role="group" aria-label="Função de {{ f.jogador }} ({{ f.nome_posicao }})">
+            {% for opcao in f.opcoes %}
+              <button class="chip" type="button" data-acao="funcao" data-posicao="{{ f.posicao }}" data-funcao="{{ opcao.id }}" aria-pressed="{{ 'true' if opcao.id == f.escolhida.id else 'false' }}"{% if bloqueado %} disabled{% endif %}>{{ opcao.nome }}</button>
+            {% endfor %}
+          </div>
+          <p class="grupo__desc">{{ f.escolhida.descricao }}</p>
+        </div>
+      </details>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grupo">
+  <h2 class="grupo__titulo">Bolas paradas</h2>
+  <p class="grupo__nota">Há poucos livres perigosos por jogo, e os cantos aparecem quando a bola sai pela linha de fundo. Escolhe bem quem bate: nem todos batem igual.</p>
+  <p class="rotulo" id="o-livres">Quem bate os livres</p>
+  <div class="chips" role="group" aria-labelledby="o-livres">
+    {% for m in o.marcadores %}
+      <button class="chip" type="button" data-acao="livres" data-jogador="{{ m.nome }}" aria-pressed="{{ 'true' if m.nome == o.livres else 'false' }}"{% if bloqueado %} disabled{% endif %}>{{ m.nome }}</button>
+    {% endfor %}
+  </div>
+  <p class="rotulo" id="o-cantos">Quem bate os cantos</p>
+  <div class="chips" role="group" aria-labelledby="o-cantos">
+    {% for m in o.marcadores %}
+      <button class="chip" type="button" data-acao="cantos" data-jogador="{{ m.nome }}" aria-pressed="{{ 'true' if m.nome == o.cantos else 'false' }}"{% if bloqueado %} disabled{% endif %}>{{ m.nome }}</button>
+    {% endfor %}
+  </div>
+  <p class="grupo__desc">O guarda-redes fica na baliza e não bate livres nem cantos.</p>
+</div>

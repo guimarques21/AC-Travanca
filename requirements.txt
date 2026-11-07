@@ -1,0 +1,11 @@
+Flask>=3.0
+pandas>=2.2
+openpyxl>=3.1
+# Tempo real do modo online (WebSockets). Opcional: sem estes dois o jogo funciona na mesma,
+# só que o browser pergunta ao servidor de 2 em 2 segundos.
+flask-socketio>=5.3
+simple-websocket>=1.0
+# Base de dados externa para o Top 10 (só é usada se a variável DATABASE_URL estiver definida).
+psycopg[binary]>=3.2
+# gunicorn só é preciso no Render (Linux); não corre no Windows
+gunicorn>=22.0; sys_platform != "win32"

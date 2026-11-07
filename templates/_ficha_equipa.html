@@ -1,0 +1,20 @@
+{# A equipa até agora: uma lista numerada pela ORDEM DE ESCOLHA, com as vagas por preencher.
+   Variáveis: equipa (lista de nomes), posicoes (nome -> posição), tamanho (7), nova_escolha (destaca a última).
+   Opcional: titulo (por omissão «A tua equipa»; no modo online também se mostra a equipa do adversário). #}
+<h2 class="ficha__titulo">
+  {{ titulo|default("A tua equipa") }}
+  <span class="ficha__contagem">{{ equipa|length }} de {{ tamanho }}</span>
+</h2>
+<ol class="ficha__lista">
+  {% for i in range(tamanho) %}
+    {% if i < equipa|length %}
+      {% set jogador = equipa[i] %}
+      <li class="ficha__linha{% if nova_escolha and loop.index == equipa|length %} ficha__linha--nova{% endif %}">
+        <span class="ficha__nome">{{ jogador }}</span>
+        <span class="ficha__posicao">{{ posicoes[jogador]|replace("/", " / ") }}</span>
+      </li>
+    {% else %}
+      <li class="ficha__linha ficha__linha--vazia"><span class="ficha__vazio">Por escolher</span></li>
+    {% endif %}
+  {% endfor %}
+</ol>

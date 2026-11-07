@@ -1,0 +1,86 @@
+{% set estado_adv %}{% include "online/_estado_adversario.html" %}{% endset %}
+{% if not v.tatica.escolhida or v.tatica.a_mudar %}
+{# ---- Escolher (ou mudar) a tática ---- #}
+<div class="cena cena--sorteio" data-anuncio="{{ estado_adv|trim }}">
+  <section class="coluna">
+    <h1 class="titulo titulo--pequeno">{% if v.tatica.escolhida %}Muda de tática{% else %}Escolhe a tática{% endif %}</h1>
+    <p class="lead">
+      {% if v.tatica.escolhida %}
+        Estás a jogar na tática {{ v.tatica.escolhida }}. Se mudares, cada jogador tenta ficar no mesmo papel.
+      {% else %}
+        Os dois já têm {{ tamanho }} jogadores. Escolhe como a tua equipa vai jogar: depois colocas cada um no campo. Podem escolher a mesma tática.
+      {% endif %}
+    </p>
+
+    <div class="taticas">
+      {% for t in taticas %}
+        <button class="tatica{% if t.id == v.tatica.escolhida %} tatica--atual{% endif %}" type="button" data-acao="tatica" data-tatica="{{ t.id }}"
+                aria-label="{{ t.nome }}, {{ t.esquema }}: {{ t.descricao }}{% if t.id == v.tatica.escolhida %}. Tática atual{% endif %}">
+          <span class="mini" aria-hidden="true">
+            {% for p in t.posicoes %}<i class="mini__ponto mini__ponto--{{ p.papel }}" style="--x:{{ p.x }};--y:{{ p.y }}"></i>{% endfor %}
+          </span>
+          <span class="tatica__texto">
+            <span class="tatica__nome">{{ t.nome }}</span>
+            <span class="tatica__esquema">{{ t.esquema }}</span>
+            <span class="tatica__descricao">{{ t.descricao }}</span>
+          </span>
+          {% if t.id == v.tatica.escolhida %}<span class="tatica__atual">Atual</span>{% endif %}
+        </button>
+      {% endfor %}
+    </div>
+
+    {% if v.tatica.escolhida %}<button class="voltar voltar--pequeno" type="button" data-acao="cancelar_mudar">Voltar à equipa</button>{% endif %}
+    <p class="nota nota--adversario">{{ estado_adv|trim }}</p>
+  </section>
+
+  <aside class="coluna ficha-dupla" aria-label="As equipas">
+    <div class="ficha">
+      {% with equipa=v.equipa, titulo="A tua equipa", nova_escolha=false %}{% include "_ficha_equipa.html" %}{% endwith %}
+    </div>
+    <div class="ficha ficha--adversario">
+      {% with equipa=v.equipa_adversario, titulo="Equipa de " ~ v.adversario, nova_escolha=false %}{% include "_ficha_equipa.html" %}{% endwith %}
+    </div>
+  </aside>
+</div>
+{% else %}
+{# ---- A equipa no campo: trocar, mudar de tática, estou pronto ---- #}
+{% set campo_bloqueado = v.tatica.pronto %}
+<div class="cena cena--campo cena--com-opcoes" data-anuncio="{{ estado_adv|trim }}">
+  <header class="cabecalho">
+    <h1 class="titulo titulo--pequeno">{% if v.tatica.pronto %}Estás pronto{% else %}Põe a equipa no campo{% endif %}</h1>
+    <p class="tatica-atual">
+      <span>{{ tatica_atual.nome }} · <strong>{{ tatica_atual.esquema }}</strong></span>
+      {% if not v.tatica.pronto %}<button class="voltar voltar--pequeno" type="button" data-acao="mudar_tatica">Mudar de tática</button>{% endif %}
+    </p>
+    <p class="dica" id="dica" role="status" data-padrao="{% if v.tatica.pronto %}Estás pronto. Carrega em «Editar» se quiseres mudar alguma coisa.{% else %}Toca num jogador e depois noutro para trocarem de posição.{% endif %}">
+      {% if v.tatica.pronto %}Estás pronto. Carrega em «Editar» se quiseres mudar alguma coisa.{% else %}Toca num jogador e depois noutro para trocarem de posição.{% endif %}
+    </p>
+  </header>
+
+  <section class="campo-zona" aria-label="Campo, {{ tatica_atual.nome }}">
+    {% include "_campo.html" %}
+  </section>
+
+  <section class="opcoes-jogo" id="opcoes" aria-label="Estilo de jogo, funções e bolas paradas">
+    {% include "online/_opcoes.html" %}
+  </section>
+
+  <footer class="rodape">
+    {% if v.tatica.pronto %}
+      <button class="botao botao--secundario" type="button" data-acao="editar">Editar</button>
+      <p class="espera"><span class="espera__pontos" aria-hidden="true"><i></i><i></i><i></i></span> À espera de {{ v.adversario }}…</p>
+    {% else %}
+      <div class="comecar">
+        <button class="botao" type="button" data-acao="pronto"{% if not v.tatica.estilo %} disabled aria-describedby="falta-estilo"{% endif %}>
+          <span class="botao__nome">Estou pronto</span>
+          <span class="botao__desc">quando os dois estiverem prontos, o jogo começa</span>
+        </button>
+      </div>
+      {% if not v.tatica.estilo %}<p class="nota nota--falta" id="falta-estilo" role="status">Falta escolher o estilo de jogo.</p>{% endif %}
+      <p class="nota"><span class="nota__marca" aria-hidden="true">!</span> Um jogador fora da sua posição natural rende menos.</p>
+      <p class="nota">O estilo de jogo tens de escolher tu. As funções e quem bate livres e cantos já vêm escolhidos: muda o que quiseres antes de carregares em «Estou pronto».</p>
+    {% endif %}
+    <p class="nota nota--adversario">{{ estado_adv|trim }}</p>
+  </footer>
+</div>
+{% endif %}

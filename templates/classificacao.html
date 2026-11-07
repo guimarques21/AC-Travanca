@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block titulo %}Classificação — AC Travanca{% endblock %}
+
+{% block classe_corpo %}pagina-lista{% endblock %}
+
+{% block conteudo %}
+<div class="cena cena--tabela">
+
+  <section class="coluna">
+    <h1 class="titulo titulo--pequeno">Classificação final</h1>
+    <p class="lead">
+      {{ nome }}, o {{ liga.equipa }} terminou em <strong>{{ liga.resumo.posicao }}.º lugar</strong>
+      com {{ liga.resumo.pontos }} {{ "ponto" if liga.resumo.pontos == 1 else "pontos" }}.
+    </p>
+
+    <div class="tabela-caixa">
+      <table class="tabela">
+        <caption class="so-leitor">Classificação final da liga, 12 equipas</caption>
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col" class="tabela__equipa">Equipa</th>
+            <th scope="col" class="col-j" title="Jogos">J</th>
+            <th scope="col" title="Vitórias">V</th>
+            <th scope="col" title="Empates">E</th>
+            <th scope="col" title="Derrotas">D</th>
+            <th scope="col" class="col-extra" title="Golos marcados">GM</th>
+            <th scope="col" class="col-extra" title="Golos sofridos">GS</th>
+            <th scope="col" title="Saldo de golos">SG</th>
+            <th scope="col" title="Pontos">Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in liga.tabela %}
+            <tr{% if l.equipa == liga.equipa %} class="tabela__nossa" aria-current="true"{% endif %}>
+              <td>{{ l.posicao }}</td>
+              <th scope="row" class="tabela__equipa">{{ l.equipa }}</th>
+              <td class="col-j">{{ l.j }}</td>
+              <td>{{ l.v }}</td>
+              <td>{{ l.e }}</td>
+              <td>{{ l.d }}</td>
+              <td class="col-extra">{{ l.gm }}</td>
+              <td class="col-extra">{{ l.gs }}</td>
+              <td>{{ ("+" ~ l.sg) if l.sg > 0 else l.sg }}</td>
+              <td class="tabela__pts">{{ l.pts }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="nota">J jogos · V vitórias · E empates · D derrotas · GM golos marcados · GS golos sofridos · SG saldo de golos · Pts pontos. Em caso de empate em pontos conta o saldo de golos.</p>
+  </section>
+
+  <aside class="coluna lateral">
+    <h2 class="ficha__titulo">Melhores marcadores</h2>
+    {% if liga.marcadores %}
+      <ol class="marcadores">
+        {% for m in liga.marcadores %}
+          <li class="marcador"><span class="marcador__nome">{{ m.nome }}</span><span class="marcador__golos">{{ m.golos }} {{ "golo" if m.golos == 1 else "golos" }}</span></li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="nota">O {{ liga.equipa }} não marcou nenhum golo nesta liga.</p>
+    {% endif %}
+
+    <a class="botao" href="{{ url_for('offline.top10') }}">
+      <span class="botao__nome">Ver o Top 10</span>
+      <span class="botao__desc">de todos os utilizadores</span>
+    </a>
+    <a class="link-discreto" href="{{ url_for('offline.liga_jogos') }}">Rever os jogos</a>
+  </aside>
+
+</div>
+{% endblock %}

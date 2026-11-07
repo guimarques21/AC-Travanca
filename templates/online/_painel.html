@@ -1,0 +1,12 @@
+{# O painel da sala, desenhado para QUEM pede (variável v: ver salas.Salas.vista). #}
+{% if v.estado == "espera" %}
+  {% include "online/_fase_espera.html" %}
+{% elif v.estado == "sorteio" %}
+  {% include "online/_fase_sorteio.html" %}
+{% elif v.estado == "taticas" %}
+  {% include "online/_fase_taticas.html" %}
+{% elif v.estado == "pronta" %}
+  {% include "online/_fase_pronta.html" %}
+{% else %}
+  {% include "online/_fase_abandonada.html" %}
+{% endif %}

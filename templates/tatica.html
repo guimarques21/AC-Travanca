@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block titulo %}Tática — AC Travanca{% endblock %}
+
+{% block classe_corpo %}pagina-lista{% endblock %}
+
+{% block conteudo %}
+<div class="cena cena--sorteio">
+
+  <section class="coluna">
+    <h1 class="titulo titulo--pequeno">{% if atual %}Muda de tática{% else %}Escolhe a tática{% endif %}</h1>
+    <p class="lead">
+      {% if atual %}
+        Estás a jogar na tática {{ atual }}. Se mudares, cada jogador tenta ficar no mesmo papel.
+      {% else %}
+        Os teus {{ tamanho }} jogadores estão escolhidos. Escolhe como vão jogar: depois colocas cada um no campo.
+      {% endif %}
+    </p>
+
+    {# Cada cartão é um botão: um toque escolhe a tática. O desenho mostra onde fica cada jogador. #}
+    <form class="taticas" method="post" action="{{ url_for('offline.escolher_tatica') }}">
+      {% for t in taticas %}
+        <button class="tatica{% if t.id == atual %} tatica--atual{% endif %}" type="submit" name="tatica" value="{{ t.id }}"
+                aria-label="{{ t.nome }}, {{ t.esquema }}: {{ t.descricao }}{% if t.id == atual %}. Tática atual{% endif %}">
+          <span class="mini" aria-hidden="true">
+            {% for p in t.posicoes %}<i class="mini__ponto mini__ponto--{{ p.papel }}" style="--x:{{ p.x }};--y:{{ p.y }}"></i>{% endfor %}
+          </span>
+          <span class="tatica__texto">
+            <span class="tatica__nome">{{ t.nome }}</span>
+            <span class="tatica__esquema">{{ t.esquema }}</span>
+            <span class="tatica__descricao">{{ t.descricao }}</span>
+          </span>
+          {% if t.id == atual %}<span class="tatica__atual">Atual</span>{% endif %}
+        </button>
+      {% endfor %}
+    </form>
+
+    {% if atual %}<a class="voltar voltar--pequeno" href="{{ url_for('offline.equipa') }}">Voltar à equipa</a>{% endif %}
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Recomeçar do início</a>
+  </section>
+
+  <aside class="coluna ficha" aria-label="A tua equipa">
+    {% include "_ficha_equipa.html" %}
+  </aside>
+
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block titulo %}Convite — AC Travanca{% endblock %}
+
+{% block conteudo %}
+<div class="cena">
+  {% include "_camisola.html" %}
+
+  <section class="coluna">
+    <h1 class="titulo titulo--medio">{{ anfitriao }} convidou-te</h1>
+    <p class="lead">Um jogo online de futebol de 7: escolhem 7 jogadores à vez, definem a tática e jogam um contra o outro. Vais jogar como <strong>{{ nome }}</strong>.</p>
+
+    <form method="post" action="{{ url_for('online.entrar', sala_id=sala_id) }}">
+      <button class="botao" type="submit">
+        <span class="botao__nome">Entrar na sala</span>
+        <span class="botao__desc">e começar o sorteio</span>
+      </button>
+    </form>
+
+    <a class="link-discreto" href="{{ url_for('inicio') }}">Não quero entrar</a>
+  </section>
+</div>
+{% endblock %}

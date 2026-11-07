@@ -1,0 +1,101 @@
+{# A simulação visual do jogo (Passo 8). Os dados vêm do filme (JSON em url_filme); o desenho é feito por static/js/cena.js
+   e o comando por static/js/jogo_visual.js. Nada aqui mostra o resultado: ele só aparece quando a simulação acaba. #}
+{% set eu = fim.equipas[0] %}
+{% set adv = fim.equipas[1] %}
+<section class="visual visual--a-carregar" aria-labelledby="visual-titulo"
+         data-sala="{{ v.sala }}" data-url-filme="{{ url_filme }}" data-eu="{{ eu.treinador }}" data-adv="{{ adv.treinador }}">
+  <h2 class="so-leitor" id="visual-titulo">Simulação do jogo</h2>
+
+  <div class="visual__quadro" tabindex="0" aria-label="Simulação do jogo: espaço para pausa, setas para saltar">
+    <div class="visual__placar" aria-hidden="true">
+      <span class="visual__eq visual__eq--eu">{{ eu.treinador }}</span>
+      <span class="visual__g visual__g--eu">0</span>
+      <span class="visual__centro">
+        <span class="visual__relogio">00:00</span>
+        <span class="visual__parte">1.ª parte</span>
+      </span>
+      <span class="visual__g visual__g--adv">0</span>
+      <span class="visual__eq visual__eq--adv">{{ adv.treinador }}</span>
+    </div>
+
+    <canvas class="visual__tela" role="img"
+            aria-label="Campo de futebol de 7 visto de lado: a tua equipa de amarelo ataca para a direita, o adversário de azul ataca para a esquerda."></canvas>
+
+    <div class="visual__banner" hidden data-lado="eu" aria-hidden="true">
+      <span class="visual__banner-golo">GOLO!</span>
+      <span class="visual__banner-sub"></span>
+    </div>
+
+    <div class="visual__corte" aria-hidden="true"><span class="visual__corte-texto"></span></div>
+
+    <div class="visual__intervalo" hidden>
+      <p class="visual__intervalo-titulo">Intervalo</p>
+      <p class="visual__intervalo-placar"></p>
+      <button class="botao botao--curto" type="button" data-vis="continuar">Segunda parte</button>
+    </div>
+
+    <div class="visual__fimjogo" hidden>
+      <p class="visual__intervalo-titulo">Fim do jogo</p>
+      <div class="visual__fimjogo-botoes">
+        <button class="botao botao--curto" type="button" data-vis="resultado">Ver o resultado</button>
+        <button class="visual__ghost" type="button" data-vis="repetir">Ver outra vez</button>
+      </div>
+    </div>
+
+    <div class="visual__carregar" role="status">
+      <i class="visual__bola" aria-hidden="true"></i>
+      <span>A preparar o jogo…</span>
+    </div>
+
+    <div class="visual__erro" role="alert">
+      <p>Não foi possível preparar a simulação.</p>
+      <div class="visual__fimjogo-botoes">
+        <button class="botao botao--curto" type="button" data-vis="tentar">Tentar outra vez</button>
+        <button class="visual__ghost" type="button" data-vis="ver-so-resultado">Ver só o resultado</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="visual__texto" aria-hidden="true" data-tipo="0"></p>
+
+  <div class="visual__controlos">
+    <div class="visual__linha">
+      <button class="vb vb--play" type="button" data-vis="play" aria-label="Pausa">
+        <svg class="vb__ico vb__ico--pausa" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>
+        <svg class="vb__ico vb__ico--play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        <span class="vb__texto">Pausa</span>
+      </button>
+
+      <div class="visual__slider" role="slider" tabindex="0" aria-label="Tempo do jogo" aria-valuemin="0" aria-valuemax="3000" aria-valuenow="0">
+        <div class="visual__trilho">
+          <div class="visual__prog"></div>
+          <div class="visual__marcas"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="visual__linha visual__linha--opcoes">
+      <div class="vb-grupo" role="group" aria-label="O que ver">
+        <button class="vb vb--opcao" type="button" data-vis-modo="lances" aria-pressed="true">Lances principais</button>
+        <button class="vb vb--opcao" type="button" data-vis-modo="completo" aria-pressed="false">Jogo completo</button>
+      </div>
+      <div class="vb-grupo" role="group" aria-label="Ritmo da simulação">
+        <button class="vb vb--vel" type="button" data-vis-vel="1" aria-pressed="true">×1</button>
+        <button class="vb vb--vel" type="button" data-vis-vel="2" aria-pressed="false">×2</button>
+        <button class="vb vb--vel" type="button" data-vis-vel="4" aria-pressed="false">×4</button>
+        <button class="vb vb--vel" type="button" data-vis-vel="10" aria-pressed="false">×10</button>
+      </div>
+      <div class="vb-grupo">
+        <button class="vb vb--opcao" type="button" data-vis="proximo">Próximo lance</button>
+        <button class="vb vb--opcao vb--destaque" type="button" data-vis="fim">Saltar para o resultado</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="visual__rever">
+    <button class="vb vb--opcao" type="button" data-vis="rever">Rever a simulação</button>
+  </div>
+
+  <noscript><p class="nota">Sem JavaScript não há simulação visual: o resultado aparece abaixo.</p></noscript>
+</section>
+<script>(function(){setTimeout(function(){var c=document.getElementById('cena-fim');if(c&&!window.JogoVisual){c.classList.add('cena--vista');}},9000);})();</script>
