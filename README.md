@@ -394,8 +394,8 @@ a ninguém mais do que ≈ 24 m/s em média (`visual.RITMO`; picos até ≈ 34 m
 
 **Comandos**: ▶/⏸ (barra de espaços), velocidades ×1 ×2 ×4 ×10, **«Lances principais»** (cerca de 2 minutos por parte: todos os
 ataques com perigo, os golos, as defesas difíceis, os remates, livres e cantos, com um corte rápido entre lances) ou **«Jogo completo»**
-(os 50 minutos do jogo), «Próximo lance» (tecla N), barra de tempo que **só mostra o intervalo** (os golos já não são marcados na barra,
-para não estragar a surpresa; clicar, arrastar ou setas), **pausa automática no intervalo** («Segunda parte» continua), letreiro
+(os 50 minutos do jogo), «Próximo lance» (tecla N), **sem barra de tempo** (retirada a 8 nov: mostrava onde estavam os lances e os golos e
+estragava a surpresa; ficam as setas do teclado), **pausa automática no intervalo** («Segunda parte» continua), letreiro
 «GOLO!», relato por baixo do campo e marcador com relógio.
 No fim: «Ver o resultado» ou «Ver outra vez». Depois de ver, F5 mostra logo o resultado e deixa «Rever a simulação».
 A página nunca recarrega, por isso **a música de fundo não pára**.
