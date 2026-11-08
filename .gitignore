@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
+~$*.xlsx
+instance/
+*.sqlite3
+*.sqlite3-journal

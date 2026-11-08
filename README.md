@@ -279,6 +279,10 @@ cookie identifica cada jogador.
   em `static/js/` e muda `URL_SOCKETIO` no topo do `sala.js`.
 - Quem perder o cookie (outro browser, janela privada fechada) não volta ao seu lugar: a sala é de quem
   tem o token.
+- **Erro «Ficheiro … não encontrado» ou «A pasta de dados não existe» no arranque.** Os 3 Excel têm de estar no GitHub,
+  dentro da pasta `dados/` (também se aceita «Dados» ou os Excel soltos ao lado do `app.py`). A mensagem de erro, nos
+  Logs do Render, diz onde procurou e que ficheiros e pastas existem no servidor. Depois de corrigir, faz
+  **Manual Deploy → Clear build cache & deploy**.
 
 ## O jogo online (Passo 7): o motor de jogo
 
@@ -378,13 +382,21 @@ bancada salta), árbitro que acompanha o jogo, balizas com rede, bandeirolas, pa
 
 **As regras do jogo estão respeitadas**: se a bola sai, repõe a *outra* equipa no sítio por onde saiu (lançamento lateral na linha,
 canto no canto, pontapé de baliza); depois de um golo, a bola retira-se da rede e **a equipa que sofreu bate a saída do meio-campo**;
-se um jogador tira a bola, é ele que fica com ela; a bola nunca salta de um sítio para outro nem atravessa o campo sem voar; ninguém
-se teletransporta (nenhum jogador passa de 9,5 m/s). Tudo isto vem dos mesmos eventos do motor: o filme só mostra o que o motor decidiu.
+se um jogador tira a bola, é ele que fica com ela; a bola nunca salta de um sítio para outro nem atravessa o campo sem voar (quando
+um jogador apanha uma bola parada, ela rola até aos pés dele); ninguém se teletransporta. Tudo isto vem dos mesmos eventos do motor: o
+filme só mostra o que o motor decidiu.
 
-**Comandos**: ▶/⏸ (barra de espaços), velocidades ×1 ×2 ×4 ×10, **«Lances principais»** (cerca de 3 a 5 minutos: todos os golos,
-defesas difíceis, remates perigosos, livres e cantos, com um corte rápido entre lances) ou **«Jogo completo»** (os 50 minutos, com os
-tempos mortos a passar depressa), «Próximo lance» (tecla N), barra de tempo com os golos e o intervalo (clicar, arrastar ou setas),
-**pausa automática no intervalo** («Segunda parte» continua), letreiro «GOLO!», relato por baixo do campo e marcador com relógio.
+**Ritmo (pedido a 8 nov)**: o filme anda a um ritmo de jogo corrido, não ao ritmo «real» do motor. Cada jogada é comprimida para o
+tempo que a ação precisa (o portador corre depressa, decide em ≈ 0,3 s em vez de ficar parado, a bola voa a ≈ 30 m/s), sem nunca pedir
+a ninguém mais do que ≈ 24 m/s em média (`visual.RITMO`; picos até ≈ 34 m/s nos arranques). A ordem e o resultado de tudo ficam iguais; o relógio do marcador acompanha o jogo
+(`rel`). **Medido:** «Jogo completo» a ×1 ≈ 8 a 10 minutos no total (cerca de 4 a 5 por parte), a ×2 cerca de metade; «Lances principais»
+≈ 2 minutos por parte; o intervalo dura ≈ 3 s de filme.
+
+**Comandos**: ▶/⏸ (barra de espaços), velocidades ×1 ×2 ×4 ×10, **«Lances principais»** (cerca de 2 minutos por parte: todos os
+ataques com perigo, os golos, as defesas difíceis, os remates, livres e cantos, com um corte rápido entre lances) ou **«Jogo completo»**
+(os 50 minutos do jogo), «Próximo lance» (tecla N), barra de tempo que **só mostra o intervalo** (os golos já não são marcados na barra,
+para não estragar a surpresa; clicar, arrastar ou setas), **pausa automática no intervalo** («Segunda parte» continua), letreiro
+«GOLO!», relato por baixo do campo e marcador com relógio.
 No fim: «Ver o resultado» ou «Ver outra vez». Depois de ver, F5 mostra logo o resultado e deixa «Rever a simulação».
 A página nunca recarrega, por isso **a música de fundo não pára**.
 
@@ -401,15 +413,26 @@ A página nunca recarrega, por isso **a música de fundo não pára**.
    `static/js/cena.js` desenha esse instante num `<canvas>` com perspetiva a sério; `static/js/jogo_visual.js` trata do tempo e dos botões.
    `sala.js` volta a ligar a simulação sempre que o painel é redesenhado, sem a reiniciar.
 
-**Testes**: `test_passo8_filme.py` (invariantes do filme em 28 jogos nos dois lados, a rota, privacidade, o espelho, o JavaScript contra
-o Python) e `e2e_passo8.py` (Chromium em PC, telemóvel e telemóvel estreito: sem spoilers, botões, golo, intervalo, fim, F5, a música não
+**Testes**: `test_passo8_filme.py` (invariantes do filme em 28 jogos nos dois lados, a rota, privacidade, o espelho, o relógio, o resumo,
+o JavaScript contra o Python) e `e2e_passo8.py` (Chromium em PC, telemóvel e telemóvel estreito: sem spoilers, botões, golo, intervalo, fim, F5, a música não
 reinicia, sem scroll horizontal, botões com pelo menos 44 px).
+
+### Notas dos jogadores e MVP (pedido a 8 nov)
+
+No «Fim do jogo», depois das estatísticas, aparece **«Notas dos jogadores»**: o **MVP do jogo** em destaque (cartão amarelo, com a nota e
+os feitos) e a nota (3,0 a 10,0) de cada um dos 14 jogadores, equipa por equipa (a tua à esquerda), com a posição, a função e até três
+destaques («2 golos · 1 assistência · 5 defesas…»). A nota **só conta o que cada um fez** (golos, assistências, passes para remate,
+passes certos, dribles, desarmes, interceções, cortes, defesas, faltas, remates falhados) e o que a equipa sofreu e marcou; **nunca
+os atributos**. Um jogo normal dá cerca de 6,5, acima de 8 é um grande jogo e o 9 é raro (≈ 1 % dos jogadores). O MVP é quem tem a nota
+mais alta (desempata por golos e assistências); quase sempre é de quem ganhou. Os dois veem as mesmas notas e o mesmo MVP.
 
 ### Limites conhecidos (Passo 8)
 
 - É uma representação: o motor decide *o que* acontece e o filme inventa *como se vê* (por exemplo o canto da baliza onde entra um golo,
   o sítio exato de um desarme ou a trajetória dos jogadores entre dois eventos). Os resultados e as estatísticas são sempre os do motor.
 - A vista é de televisão (de lado): os voos do guarda-redes são ao longo da linha de baliza, por isso aparecem em perspetiva.
+- O filme está acelerado: os jogadores movem-se depressa (como o antigo ×4) e tudo se passa mais depressa do que na vida real. Quem quiser
+  ver o jogo todo ao ritmo de um comentador usa «Jogo completo» a ×1; quem quiser só o essencial usa «Lances principais».
 - Não há som de jogo (só a música de fundo), nem cartões nem substituições (o motor não os tem).
 - O filme vive em memória, como a sala: se o Render reiniciar, perde-se (o resultado também).
 
@@ -422,7 +445,25 @@ reinicia, sem scroll horizontal, botões com pelo menos 44 px).
 | Defesas do GR | 3,7 | Passes tentados / certos | 246 / 181 (73 %) |
 | Posse de bola | 50 % (23 % a 77 %) | Cantos / livres perigosos | 3,2 / 0,75 |
 
-Empates: 14 %. A diferença de golos é de 0 ou 1 em 37 % dos jogos e de 5 ou mais em 16 % (7 ou mais em 5 %) (plantéis muito diferentes).
+Empates: 14 %. A diferença de golos é de 0 ou 1 em 37 % dos jogos e de 5 ou mais em 16 % (plantéis muito diferentes).
+
+### Revisão das combinações tática × estilo (8 nov, depois de um 13-0)
+
+Um jogo 2-2-2 «contra-ataque» contra 2-3-1 «pelas alas» (equipas parecidas) acabou 13-0. Reproduzido e corrigido:
+
+- **Causa**: o motor não tinha *gestão do resultado* (quem ganha por muitos golos continuava a atacar ao mesmo ritmo e quem perde não
+  arriscava mais), a desorganização defensiva (`esp`) saturava e alimentava-se a si própria, e «pelas alas» criava mais espaço do que
+  deveria. Em futebol real, quem vai a ganhar por 3 ou 4 baixa linhas e gere o tempo, e quem tem 3 defesas fecha melhor o corredor central.
+- **Correção** (`match_engine.py`, `funcoes.py`): `K_GESTAO` (a equipa que vence por mais golos ganha menos espaço e remata menos; a que
+  perde arrisca um pouco mais), `K_SOLIDEZ` (cada defesa além de dois fecha o espaço), `K_LARGURA` (as alas deixam de criar espaço sem
+  limite) e o peso da tática no plano de jogo desceu de 0,30 para 0,18 (a tática que não encaixa no estilo custa, mas não decide o jogo).
+- **Resultado** (as 20 combinações tática × estilo, 210 pares × 16 jogos, plantéis iguais; 3 360 jogos): média de 4,5 golos por jogo;
+  diferenças de 7 ou mais golos em 0,2 % dos jogos (antes 2,7 %) e de 9 ou mais em 0,1 % (o máximo é 9). Todas as combinações ficam
+  entre ≈ 31 % e 58 % dos pontos (empates valem 1). As melhores: 2-3-1 «posse» (58 %), 3-1-2 «park the bus» (56 %), 3-1-2 «contra-ataque»
+  (55 %); as mais fracas: 3-2-1 com «bola longa» (31 %), «contra-ataque» (35 %) e «alas» (36 %) — com **um só avançado** os estilos
+  ofensivos têm pouca saída, o que também se vê no futebol — e 2-2-2 com «alas» (39 %). Com plantéis realistas (jogadores nas
+  posições naturais) o caso do 13-0 deu, em 300 jogos, a maior diferença de 8 golos e 1,7 % de goleadas de 7 ou mais.
+- Dois «alas» juntos é o par que mais golos dá (≈ 6,6 por jogo); dois «park the bus», o que menos (≈ 2,3).
 
 ### Limites conhecidos (Passo 7)
 

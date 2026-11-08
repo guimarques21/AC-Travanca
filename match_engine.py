@@ -66,6 +66,10 @@ K_FECHA_LINHA = 0.8        # quanto uma linha de dois jogadores sem ninguém ao 
 K_FALTA = 0.75             # frequência das faltas (calibrado)
 ESCALA_TALENTO = 0.65       # quanto a diferença de atributos pesa em cada ação (1 = atributos a valer tudo; calibrado: plantel muito superior ≠ goleada)
 ESCALA_MOV_FUNCAO = 0.4     # quanto de `funcoes._MOVIMENTO` se aplica (calibrado: o motor reage muito aos metros de cada jogador)
+K_GESTAO = 0.12            # gestão do resultado: por cada golo de avanço (a partir do 2.º) quem ganha baixa o ritmo e rema menos à baliza
+K_SOLIDEZ = 0.08            # cada defesa a mais que dois (3-1-2, 3-2-1) torna mais difícil abrir a defesa pela circulação de bola
+K_PRESSAO_RESULTADO = 0.06  # quem perde por 2 ou mais aperta um pouco (mais circulação, mais espaço criado)
+K_LARGURA = 1.1            # quanto jogar pelas alas abre a defesa adversária em cada passe (era 1,5: as alas marcavam demais)
 COESAO = 0.5               # quanto o plano de jogo bem executado (tática e funções certas para o estilo) melhora passes e duelos
 K_CRUZ_PLANO = 1.2         # idem para os cruzamentos de quem joga pelas alas
 CY = LARGURA / 2
@@ -525,12 +529,24 @@ class Jogo:
         # equilíbrio defensivo: quem constrói em posse deixa sempre gente atrás da bola e fecha logo o espaço
         return base * (1.0 - K_REST * max(0.0, self.eq[1 - t].tend["posse"]))
 
+    def gestao(self, t: int) -> float:
+        """Gestão do resultado (futebol a sério): quem vai à frente por vários golos baixa o ritmo (circula, remata menos) e quem
+        perde aperta. Devolve um fator: < 1 para quem ganha por 2+, > 1 para quem perde por 2+, 1 se o jogo está discutido."""
+        d = self.golos[t] - self.golos[1 - t]
+        if d >= 2:
+            return max(0.40, 1.0 - K_GESTAO * (d - 1))
+        if d <= -2:
+            return min(1.30, 1.0 + K_PRESSAO_RESULTADO * (-d - 1))
+        return 1.0
+
     def ganha_espaco(self, ganho: float, t: int):
         """A circulação de bola vai desorganizando a defesa; uma defesa baixa e compacta desorganiza-se mais devagar."""
         o = 1 - t
         eq_t = self.eq[t]
         lar, pos = eq_t.tend["largura"], eq_t.tend["posse"]
-        ganho *= max(0.4, 1.0 + 1.5 * lar * (eq_t.ef if lar > 0 else 1.0)) * max(0.4, 1.0 + K_ESP_POSSE * pos * (eq_t.ef if pos > 0 else 1.0))
+        ganho *= max(0.4, 1.0 + K_LARGURA * lar * (eq_t.ef if lar > 0 else 1.0)) * max(0.4, 1.0 + K_ESP_POSSE * pos * (eq_t.ef if pos > 0 else 1.0))
+        ganho *= self.gestao(t)
+        ganho *= 1.0 - K_SOLIDEZ * max(0, self.eq[o].n_def - 2)
         ganho *= 1.0 - K_COMPACTO * max(0.0, -self.eq[o].tend["linha"]) * self.eq[o].ef
         self.esp = _lim(self.esp + ganho, 0.0, 0.85)
 
@@ -772,7 +788,7 @@ class Jogo:
             n_bloq, _b = self.bloqueadores(pa, t)
             p_sai = 1.0 - _lim(0.05 + 0.13 * n_bloq + 0.06 * p, 0.0, 0.5)
             pg = no_alvo * p_golo * p_sai
-            u_ = K_REMATE * pg - 0.8 * zc + 0.006 * (1.0 + tend["risco"]) - 0.004
+            u_ = K_REMATE * min(1.0, self.gestao(t)) * pg - 0.8 * zc + 0.006 * (1.0 + tend["risco"]) - 0.004
             u_ += 0.02 * math.log(pr["remate"] * (pr["remate_longe"] if dgol > 14.0 else 1.0))
             out.append({"acao": "remate", "U": u_})
         if cu >= 38.0 and abs(cv - CY) > 9.0 and C.papel != taticas.GR:
@@ -840,6 +856,7 @@ class Jogo:
             self.ganhar_bola(o, D, self.pos[C])
             self.credito(t, self.dt(1.5, t))
             return True
+        D.st["desarmes_perdidos"] += 1
         self.alivio_pressao = 0.45
         return False
 
@@ -1077,6 +1094,7 @@ class Jogo:
         if D is None:
             return
         self.est[t]["dribles"] += 1
+        C.st["dribles"] += 1
         att = C.q({"Drible": 0.40, "Agilidade": 0.20, "Aceleração": 0.15, "Velocidade": 0.10, "Equilíbrio": 0.10, "Técnica": 0.05})
         dfn = D.q({"Desarme": 0.30, "Marcação": 0.20, "Agilidade": 0.15, "Antecipação": 0.15, "Velocidade": 0.10, "Equilíbrio": 0.10})
         pa = self.bola
@@ -1241,6 +1259,8 @@ class Jogo:
         bloqueadores, melhor_bloq = self.bloqueadores(pa, t)
         C.st["remates"] += 1
         self.est[t]["remates"] += 1
+        if self.ultimo_passe and self.ultimo_passe[0] is not C and self.t - self.ultimo_passe[1] <= 8.0:
+            self.ultimo_passe[0].st["passes_chave"] += 1                  # o passe que deixou o colega a rematar
         self.credito(t, self.dt(2.5, t))
         if not cabeca and self.r.random() < _lim(0.05 + 0.13 * bloqueadores + 0.06 * ctx["p"], 0.0, 0.5):
             self.est[t]["remates_bloqueados"] += 1
@@ -1321,6 +1341,53 @@ class Jogo:
         self.morto(20.0)
         self.pontape_de_saida(o)
 
+    # ------------------------------------------------------------------ notas dos jogadores
+    NOTA_BASE = 5.8
+
+    def notas(self) -> tuple[list[dict], dict]:
+        """A nota (0–10) de cada jogador e o MVP. Só conta o que cada um FEZ no jogo (golos, assistências, passes, defesas,
+        desarmes…) e o que a equipa sofreu: nunca os atributos. Um jogo normal dá cerca de 6,5; acima de 8,0 é um grande jogo."""
+        golos = list(self.golos)
+        out = [{}, {}]
+        melhor = None
+        for t, eq in enumerate(self.eq):
+            sofridos = golos[1 - t]
+            dif = golos[t] - golos[1 - t]
+            for j in eq.jog:
+                s = j.st
+                gr, defesa, medio = j.papel == taticas.GR, j.papel == taticas.DEF, j.papel == taticas.MED
+                n = self.NOTA_BASE + (0.15 if gr else 0.25 if defesa else 0.0 if medio else -0.10)
+                n += (0.90 if (gr or defesa) else 0.75) * s["golos"] + 0.55 * s["assistencias"] + 0.12 * s["passes_chave"]
+                n += 0.08 * max(0, s["remates_baliza"] - s["golos"]) - 0.03 * (s["remates"] - s["remates_baliza"])
+                n += 0.03 * (s["passes_ok"] - 0.78 * s["passes"])
+                n += 0.12 * s["dribles_ok"] - 0.08 * (s["dribles"] - s["dribles_ok"])
+                n += 0.12 * s["desarmes"] + 0.07 * s["intercecoes"] + 0.06 * s["cortes"] + 0.10 * s["bloqueios"]
+                n -= 0.06 * s["desarmes_perdidos"] + 0.12 * s["faltas"]
+                if gr:
+                    n += 0.25 * s["defesas"] - 0.25 * sofridos + (0.50 if sofridos == 0 else 0.0)
+                elif defesa:
+                    n += -0.08 * sofridos + (0.25 if sofridos == 0 else 0.0)
+                elif medio:
+                    n += -0.03 * sofridos + (0.10 if sofridos == 0 else 0.0)
+                n += 0.06 * max(-4, min(4, dif)) + (0.15 if dif > 0 else -0.10 if dif < 0 else 0.0)
+                if n > 7.5:
+                    n = 7.5 + (n - 7.5) * 0.55                      # os grandes jogos sobem devagar: o 10 é de um jogo histórico
+                n = round(max(3.0, min(10.0, n)), 1)
+                destaques = []
+                for chave, un, pl in (("golos", "golo", "golos"), ("assistencias", "assistência", "assistências"),
+                                      ("defesas", "defesa", "defesas"), ("passes_chave", "passe para remate", "passes para remate"),
+                                      ("desarmes", "desarme", "desarmes"), ("intercecoes", "interceção", "interceções"),
+                                      ("dribles_ok", "drible certo", "dribles certos"), ("cortes", "corte", "cortes")):
+                    v = s[chave]
+                    if v:
+                        destaques.append(f"{v} {un if v == 1 else pl}")
+                out[t][j.nome] = {"nota": n, "destaques": destaques[:3]}
+                chave_mvp = (n, s["golos"], s["assistencias"], 1 if dif > 0 else 0)
+                if melhor is None or chave_mvp > melhor[0]:
+                    melhor = (chave_mvp, t, j.nome)
+        mvp = {"eq": melhor[1], "nome": melhor[2], "nota": out[melhor[1]][melhor[2]]["nota"]}
+        return out, mvp
+
     # ------------------------------------------------------------------ resultado
     def resultado(self, configs) -> dict:
         total_posse = sum(self.tempo_posse) or 1.0
@@ -1344,6 +1411,7 @@ class Jogo:
         for e in self.eventos:
             if e["tipo"] == "golo":
                 marcadores[e["eq"]].append({"jogador": e["jog"], "minuto": e["min"], "origem": e["origem"], "assistencia": e.get("jog2")})
+        notas, mvp = self.notas()
         equipas = []
         for t, eq in enumerate(self.eq):
             equipas.append({
@@ -1351,6 +1419,8 @@ class Jogo:
                 "estilo": eq.estilo.id, "estilo_nome": eq.estilo.nome,
                 "livres": eq.livres.nome, "cantos": eq.cantos.nome,
                 "jogadores": [{"slot": j.slot, "nome": j.nome, "posicao": j.posicao_nome, "funcao": j.funcao,
+                               "nota": notas[t][j.nome]["nota"], "destaques": notas[t][j.nome]["destaques"],
+                               "mvp": (mvp["eq"] == t and mvp["nome"] == j.nome),
                                "funcao_nome": next(f.nome for f in fun.funcoes_da_posicao(eq.tatica, next(p for p in eq.tatica.posicoes if p.id == j.slot)) if f.id == j.funcao)} for j in eq.jog],
             })
         return {
@@ -1359,6 +1429,7 @@ class Jogo:
             "equipas": equipas,
             "estatisticas": estat,
             "marcadores": marcadores,
+            "mvp": mvp,
             "relato": self.relato(),
             "por_jogador": [{j.nome: dict(j.st) for j in eq.jog} for eq in self.eq],
             "ordem": [[j.eq, j.slot, j.nome] for j in self.ordem],

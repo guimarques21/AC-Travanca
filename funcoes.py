@@ -346,11 +346,11 @@ def obter_estilo(id_) -> Estilo | None:
 # Os valores são centrados em código: para cada estilo a média das 4 táticas dá 0 (nenhuma tática é «melhor» no geral).
 _AJUSTE_TATICA_BRUTO: dict[str, dict[int, float]] = {
     # posse: precisa de médios para triangular. 2-3-1 tem 3; 3-2-1 tem 2 e 3 defesas a construir; 3-1-2 só tem 1 médio.
-    "posse":         {1: 0.8, 2: -0.9, 3: 0.0, 4: 0.5},
+    "posse":         {1: 0.6, 2: -0.9, 3: 0.0, 4: 0.5},
     # bola longa: precisa de avançados para ganhar a bola no ar e a segunda bola; com 1 só avançado fica isolado.
-    "bola_longa":    {1: -0.5, 2: 0.7, 3: 0.6, 4: -0.6},
+    "bola_longa":    {1: -0.5, 2: 0.7, 3: 0.6, 4: -0.3},
     # contra-ataque: bloco compacto atrás e avançados rápidos para sair; os dois avançados da 3-1-2 e da 2-2-2 ajudam.
-    "contra_ataque": {1: 0.3, 2: 0.6, 3: 0.1, 4: 0.2},
+    "contra_ataque": {1: 0.3, 2: 0.6, 3: 0.1, 4: 0.5},
     # alas: precisa de jogadores nas alas. 2-3-1 tem 2 médios ala, 3-1-2 e 3-2-1 têm 2 laterais; a 2-2-2 não tem
     # ninguém nas zonas laterais.
     "alas":          {1: 0.8, 2: 0.6, 3: -1.0, 4: 0.4},
@@ -396,7 +396,7 @@ SINERGIA_FUNCAO: dict[str, dict[str, float]] = {
 }
 
 # Quanto cada componente conta para a eficácia do plano de jogo (ver `Equipa.ef` no motor de jogo).
-PESO_AJUSTE_TATICA = 0.30
+PESO_AJUSTE_TATICA = 0.18     # a tática que não encaixa no estilo custa, mas não decide o jogo (era 0,30: 2-2-2 com alas e 3-2-1 com bola longa perdiam quase sempre)
 PESO_AJUSTE_FUNCOES = 0.45
 
 

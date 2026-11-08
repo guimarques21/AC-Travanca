@@ -54,6 +54,17 @@ A_CHUTA, A_DESARMA, A_CAI, A_VOA, A_CABECEIA, A_FESTEJA, A_LANCA, A_FALTA, A_DEF
 # tipos de peça da bola
 B_PARADA, B_CONDUZ, B_RASTEIRA, B_CHAPEU, B_REMATE, B_ROLA, B_ESCONDIDA = range(7)
 
+# Ritmo do filme: o motor simula em «tempo de jogo» (um passo dura 3–6 s com o portador quase parado) e isso, visto à
+# velocidade normal, é lento demais. `_acelerar()` comprime cada peça da bola para o tempo que a ação precisa
+# (o portador corre a RITMO["vrun"], decide em RITMO["tdec"], a bola voa a RITMO["vbola"]) sem nunca pedir a nenhum
+# jogador mais do que RITMO["vcap"] m/s. O que fica igual: a ordem e o resultado de tudo.
+RITMO = {"vrun": 12.0, "tdec": 0.30, "vbola": 30.0, "tvoo": 0.20, "tparada": 0.60, "tesc": 2.40,
+         "vcap": 24.0, "tmin": 0.06, "tint": 3.0}
+CAUDA_LANCE = 2.2                # segundos de filme depois do desfecho de um lance principal
+CAUDA_GOLO = 4.6                 # idem para um golo (festejo e pontapé de saída)
+ORCAMENTO_LANCES = 150.0         # os «lances principais» (só remates e golos) duram ≈ 75 s por parte
+ORCAMENTO_RESUMO = 240.0         # o «jogo resumido» (todos os ataques) dura ≈ 2 min por parte
+
 OUTRO_LADO = {"intercecao", "desarme", "falta", "drible", "defesa", "corte"}
 V_PASSE = {"curto": 11.0, "prog": 13.0, "rutura": 14.0, "longo": 15.0}
 V_REMATE = 23.0
@@ -327,7 +338,26 @@ class Realizador:
         self._fechar(self.total)
         for tr in self.tr:
             tr.limitar_tudo(self.VMAX + 3.0)
-        self._lances()
+        self._acelerar()
+        self._recolhas()
+        self._lances(ORCAMENTO_LANCES)
+        self._resumo(ORCAMENTO_RESUMO)
+
+    def _recolhas(self):
+        """Quando a bola está parada e um jogador a vai apanhar, o jogador pode estar a um metro ou dois dela (o motor não
+        os põe no mesmo ponto). Em vez de a bola saltar para os pés dele, rola os últimos instantes até ele."""
+        P, novo = self.pecas, []
+        for i, p in enumerate(P):
+            seg = P[i + 1] if i + 1 < len(P) else None
+            if p[2] == B_PARADA and seg is not None and seg[2] == B_CONDUZ and seg[3] >= 0 and p[1] - p[0] > 0.12:
+                q = self.tr[seg[3]].pos(p[1])
+                if math.hypot(q[0] - p[5], q[1] - p[6]) > 0.6:
+                    m = min(0.30, 0.7 * (p[1] - p[0]))
+                    novo.append([p[0], p[1] - m] + p[2:])
+                    novo.append([p[1] - m, p[1], B_ROLA, -1, seg[3], p[5], p[6], 0.0, 0.0, 0.0, 0.0, 0.0])
+                    continue
+            novo.append(p)
+        self.pecas[:] = novo
 
     def _portador_do_passo(self, p):
         for i in p["ev"]:
@@ -1393,6 +1423,115 @@ class Realizador:
         f = self.J(e, "jog")
         self._texto(e["t"], f"Contra-ataque de {self.nomes[self.eq_de(e)]}!", 0)
 
+    # ------------------------------------------------------------------ ritmo
+    def _acelerar(self):
+        """Comprime o tempo do filme (ver RITMO). O filme é construído em tempo de jogo, com a bola em peças contíguas; aqui
+        cada peça passa a durar só o que a ação precisa e todo o resto (trajetórias, animações, textos, placar, lances) é
+        remapeado com a mesma função de tempo, por isso nada fica fora de sítio."""
+        R = RITMO
+        P = self.pecas
+        t_int = self.t_intervalo
+        D = []
+        for (t0, t1, k, ra, rb, ax, ay, bx, by, h, z0, z1) in P:
+            T = t1 - t0
+            if T <= 1e-9:
+                D.append(0.0)
+                continue
+            if t_int is not None and t0 >= t_int - 1e-6 and t1 <= t_int + PAUSA_INTERVALO + 1e-6:
+                D.append(max(R["tmin"], T * R["tint"] / PAUSA_INTERVALO))      # o intervalo
+                continue
+            md = 0.0
+            for f in range(14):
+                a, b = self.tr[f].pos(t0), self.tr[f].pos(t1)
+                md = max(md, math.hypot(a[0] - b[0], a[1] - b[1]))
+            md /= R["vcap"]
+            if k == B_CONDUZ:
+                a, b = self.tr[ra].pos(t0), self.tr[ra].pos(t1)
+                base = max(R["tdec"], math.hypot(a[0] - b[0], a[1] - b[1]) / R["vrun"])
+            elif k in (B_RASTEIRA, B_CHAPEU, B_REMATE, B_ROLA):
+                a = self.tr[ra].pos(t0) if ra >= 0 else (ax, ay)
+                b = self.tr[rb].pos(t1) if rb >= 0 else (bx, by)
+                base = max(R["tvoo"], math.hypot(a[0] - b[0], a[1] - b[1]) / (R["vbola"] + (4.0 if k == B_REMATE else 0.0)))
+            elif k == B_PARADA:
+                base = R["tparada"]
+            else:
+                base = R["tesc"]
+            if k in (B_RASTEIRA, B_CHAPEU, B_REMATE, B_ROLA) or (t0 >= self.total - 1.5 and k == B_CONDUZ):
+                # a bola nunca voa mais depressa do que RITMO["vbola"], mesmo que o motor lhe tenha dado só uns centésimos;
+                # e a última jogada antes do apito acaba de se ver (o filme alonga-se uns instantes)
+                D.append(min(3.0, max(R["tmin"], base, md)))
+            else:
+                D.append(min(T, max(R["tmin"], base, md)))
+        kt, kn = [P[0][0]], [0.0]
+        for p, d in zip(P, D):
+            kt.append(p[1])
+            kn.append(kn[-1] + d)
+
+        def M(t):
+            if t <= kt[0]:
+                return kn[0] + (t - kt[0])
+            if t >= kt[-1]:
+                return kn[-1] + (t - kt[-1])
+            i = bisect_right(kt, t) - 1
+            while i + 1 < len(kt) and kt[i + 1] <= t:
+                i += 1
+            span = kt[i + 1] - kt[i]
+            return kn[i] if span <= 1e-12 else kn[i] + (t - kt[i]) / span * (kn[i + 1] - kn[i])
+
+        self.relogio = []                                   # (tempo de filme, segundos de jogo sem o intervalo)
+        ultimo = -9.0
+        for t_old, t_new in zip(kt, kn):
+            seg = t_old if t_int is None or t_old <= t_int else (t_int if t_old <= t_int + PAUSA_INTERVALO else t_old - PAUSA_INTERVALO)
+            if seg - ultimo >= 0.4 or t_old == kt[-1]:
+                self.relogio.append((t_new, seg))
+                ultimo = seg
+        # trajetórias: remapear e tirar chaves coladas (< 40 ms), sem tocar nas protegidas
+        for tr in self.tr:
+            prot = [round(t * 100) in tr.prot for t in tr.t]
+            nt = [M(t) for t in tr.t]
+            xs, ys, ps, ts_ = [], [], [], []
+            for j in range(len(nt)):
+                if ts_ and nt[j] - ts_[-1] < 0.04:
+                    ult = j == len(nt) - 1
+                    if ps[-1]:
+                        if not prot[j] and not ult:
+                            continue                          # a anterior é protegida: fica; esta cai
+                    elif len(ts_) > 1:
+                        ts_.pop(), xs.pop(), ys.pop(), ps.pop()   # a anterior não é protegida: cai
+                    elif not prot[j]:
+                        continue                              # a anterior é a primeira chave: fica
+                ts_.append(nt[j]); xs.append(tr.x[j]); ys.append(tr.y[j]); ps.append(prot[j])
+            tr.t, tr.x, tr.y = ts_, xs, ys
+            tr.prot = {round(t * 100) for t, p in zip(ts_, ps) if p}
+            tr.limitar_tudo(R["vcap"] * 1.4)
+        for p in P:
+            p[0], p[1] = M(p[0]), M(p[1])
+        for a in self.anims:
+            t0 = a[0]
+            a[0] = M(t0)
+            a[3] = max(min(0.45, a[3]), M(t0 + a[3]) - a[0])
+        for x in self.textos:
+            x[0] = M(x[0])
+        for x in self.placar:
+            x[0] = M(x[0])
+        for m in self.mortos:
+            m[0], m[1] = M(m[0]), M(m[1])
+        for m in self.marcos:
+            ini = m["ini"] if m["ini"] is not None else m["rel"] - 11.0
+            m["ini"], m["rel"], m["res"] = M(max(0.0, ini)), M(m["rel"]), M(m["res"])
+            m["cauda"] = CAUDA_GOLO if m["tipo"] == "golo" else CAUDA_LANCE
+        for p in self.passos:
+            p["ts"] = M(p["ts"])
+        for e in self.ev:
+            e["t"] = M(e["t"])
+            if "tq" in e:
+                e["tq"] = M(e["tq"])
+        self.pausa = M((t_int or 0.0) + PAUSA_INTERVALO) - M(t_int or 0.0) if t_int is not None else 0.0
+        if self.t_intervalo is not None:
+            self.t_intervalo = M(self.t_intervalo)
+        self.total_jogo = self.total
+        self.total = M(self.total)
+
     # ------------------------------------------------------------------ lances principais
     def _lances(self, orcamento=330.0):
         cand = []
@@ -1420,6 +1559,73 @@ class Realizador:
                 fundidos.append(list(c))
         self.lances = fundidos
 
+    # ------------------------------------------------------------------ jogo resumido
+    def _resumo(self, orcamento):
+        """O «jogo resumido»: todos os ataques (a bola perto da baliza de quem a tem) e todos os lances principais, por ordem,
+        sem a circulação de bola sem perigo a meio-campo. A «zona de ataque» alarga-se ou estreita-se até caber no orçamento."""
+        P = self.pecas
+        equipa, atual = [], 0
+        for p in P:                                              # a equipa que tem a bola em cada peça
+            if p[3] >= 0:
+                atual = self.jog[p[3]][0]
+            equipa.append(atual)
+        for i in range(len(P) - 1, -1, -1):                      # bola parada à espera de reposição: é de quem a vai bater
+            if P[i][2] == B_PARADA and i + 1 < len(P) and P[i + 1][3] >= 0:
+                equipa[i] = self.jog[P[i + 1][3]][0]
+
+        def avanco(i, t, a, b, ra, rb):
+            k = P[i][2]
+            if k == B_ESCONDIDA:
+                return -1.0
+            if k == B_CONDUZ:
+                x = self.tr[ra].pos(t)[0]
+            elif k == B_PARADA:
+                x = a[0]
+            else:
+                x = a[0] if rb < 0 else b[0]
+            return x / W if equipa[i] == 0 else 1.0 - x / W
+
+        pontos = []                                              # (t0, t1, avanço da bola no fim da peça)
+        for i, (t0, t1, k, ra, rb, ax, ay, bx, by, h, z0, z1) in enumerate(P):
+            if t1 - t0 <= 1e-9:
+                continue
+            if k == B_CONDUZ:
+                u = max(avanco(i, t0, (ax, ay), (bx, by), ra, rb), avanco(i, t1, (ax, ay), (bx, by), ra, rb))
+            elif k in (B_RASTEIRA, B_CHAPEU, B_REMATE, B_ROLA):
+                A = self.tr[ra].pos(t0) if ra >= 0 else (ax, ay)
+                B = self.tr[rb].pos(t1) if rb >= 0 else (bx, by)
+                u = max((A[0] / W) if equipa[i] == 0 else 1.0 - A[0] / W, (B[0] / W) if equipa[i] == 0 else 1.0 - B[0] / W)
+            elif k == B_PARADA:
+                u = avanco(i, t0, (ax, ay), (bx, by), ra, rb)
+            else:
+                u = -1.0
+            pontos.append((t0, t1, u))
+
+        base = [(l[0], l[1]) for l in self.lances]
+
+        def juntar(z):
+            iv = [[a, b] for a, b, u in pontos if u >= z]
+            iv = [[max(0.0, a - 2.5), min(self.total, b + 1.2)] for a, b in iv] + [list(x) for x in base]
+            iv.sort()
+            out = []
+            for a, b in iv:
+                if out and a <= out[-1][1] + 2.0:
+                    out[-1][1] = max(out[-1][1], b)
+                else:
+                    out.append([a, b])
+            return [x for x in out if x[1] - x[0] >= 1.5]
+
+        escolhido = juntar(0.95)
+        z = 0.50
+        while z <= 0.95:
+            r = juntar(z)
+            if sum(b - a for a, b in r) <= orcamento:
+                escolhido = r
+                break
+            z += 0.01
+        self.zona_resumo = z
+        self.resumo = escolhido
+
     # ------------------------------------------------------------------ saída
     def filme(self):
         r = lambda v, k: int(round(v * k))
@@ -1433,12 +1639,14 @@ class Realizador:
         bola = [[r(p[0], 100), r(p[1], 100), p[2], p[3], p[4], r(p[5], 10), r(p[6], 10), r(p[7], 10), r(p[8], 10), r(p[9], 10), r(p[10], 10), r(p[11], 10)]
                 for p in self.pecas]
         return {
-            "v": 1, "dur": int(self.total * 100), "parte": r(self.t_intervalo or self.total / 2, 100),
+            "v": 2, "dur": int(self.total * 100), "parte": r(self.t_intervalo or self.total / 2, 100),
+            "pausa": r(self.pausa, 100), "rel": [[r(a, 100), r(b, 10)] for a, b in self.relogio],
             "nomes": self.nomes, "jog": self.jog, "tr": tr, "bola": bola,
             "an": [[r(a[0], 100), a[1], a[2], r(a[3], 100), r(a[4], 10), r(a[5], 10)] for a in sorted(self.anims, key=lambda a: a[0])],
             "tx": [[r(t[0], 100), t[1], t[2]] for t in sorted(self.textos, key=lambda t: t[0])],
             "pl": [[r(p[0], 100), p[1], p[2]] for p in self.placar],
             "lances": [[r(l[0], 100), r(l[1], 100), l[2], l[3], l[4]] for l in self.lances],
+            "resumo": [[r(a, 100), r(b, 100)] for a, b in self.resumo],
             "mortos": [[r(m[0], 100), r(m[1], 100)] for m in self.mortos if m[1] > m[0] + 1.0],
         }
 

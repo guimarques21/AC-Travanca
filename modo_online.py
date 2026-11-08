@@ -256,8 +256,27 @@ def _fim_do_jogo(res: dict, lugar: str) -> dict:
         resultado = "derrota"
     else:
         resultado = "empate"
-    return {"resultado": resultado, "placar": [gols[i], gols[j]], "equipas": [res["equipas"][i], res["equipas"][j]],
+    equipas = [_com_notas(res["equipas"][k]) for k in (i, j)]
+    mvp = None
+    if res.get("mvp"):
+        m = res["mvp"]
+        dono = next(x for x in equipas[0 if m["eq"] == i else 1]["jogadores"] if x["nome"] == m["nome"])
+        mvp = {"nome": m["nome"], "equipa": res["equipas"][m["eq"]]["treinador"], "meu": m["eq"] == i,
+               "nota_txt": dono["nota_txt"], "classe": dono["classe"], "destaques": dono["destaques"],
+               "posicao": dono["posicao"]}
+    return {"resultado": resultado, "placar": [gols[i], gols[j]], "equipas": equipas, "mvp": mvp,
             "principais": principais, "extras": extras, "marcadores": marcadores, "relato": res["relato"]}
+
+
+def _com_notas(equipa: dict) -> dict:
+    """Uma cópia da equipa em que cada jogador traz a nota escrita à portuguesa («7,4») e a classe para a cor."""
+    jogadores = []
+    for jg in equipa["jogadores"]:
+        n = jg.get("nota")
+        classe = "otima" if n is not None and n >= 8.0 else "boa" if n is not None and n >= 7.0 else \
+            "normal" if n is not None and n >= 6.0 else "fraca"
+        jogadores.append({**jg, "nota_txt": ("%.1f" % n).replace(".", ",") if n is not None else "", "classe": classe})
+    return {**equipa, "jogadores": jogadores}
 
 
 def _percentagem(a, b) -> int:
