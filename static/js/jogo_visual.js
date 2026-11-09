@@ -2,8 +2,8 @@
    jogo_visual.js — o «comando» da simulação visual (Passo 8)
 
    Pede o filme ao servidor (/filme), põe-no a correr no canvas (cena.js) e trata dos botões:
-   play/pausa, velocidades, «Lances principais» ou «Jogo completo», próximo lance, barra de tempo com os golos,
-   pausa automática no intervalo e acelerar os tempos mortos.
+   play/pausa, velocidades, «Lances principais» (≈ 2 min por parte) ou «Jogo completo», próximo lance (sem barra de tempo: não há nada que adiante o resultado),
+   pausa automática no intervalo. O filme já vem com o tempo comprimido (ver visual.py, RITMO).
 
    A página nunca recarrega (a música de fundo não pára). O resultado e as estatísticas ficam escondidos até a
    simulação acabar (ou o jogador saltar para o fim), para não estragar a surpresa.
@@ -102,40 +102,28 @@
       this.raf = requestAnimationFrame(this._quadro);
     }
 
-    /* ------------------------------------------------------------------ preparar (segmentos, barra, marcas) */
+    /* ------------------------------------------------------------------ preparar (segmentos) */
     _preparar() {
       const F = this.f;
-      const segs = [{ ini: 0, fim: 5.5, rot: 'Pontapé de saída', tipo: 'inicio' }];
-      F.lances.forEach((l) => segs.push({ ini: l.ini, fim: l.fim, rot: l.min + "'", tipo: l.tipo }));
-      const pausa = F.duracao - 3000;
-      segs.push({ ini: F.parte - 2.0, fim: F.parte + Math.min(6, pausa * 0.45), rot: 'Intervalo', tipo: 'intervalo' });
-      segs.push({ ini: Math.max(0, F.duracao - 6), fim: F.duracao, rot: 'Fim do jogo', tipo: 'fim' });
+      const segs = [{ ini: 0, fim: Math.min(3.5, F.duracao), rot: 'Pontapé de saída', tipo: 'inicio' }];
+      const minuto = (t) => Math.min(50, Math.floor(F.segundosDeJogo(t) / 60) + 1) + "'";
+      const trechos = F.resumo.length ? F.resumo : F.lances.map((l) => [l.ini, l.fim]);
+      trechos.forEach((r) => {
+        const dentro = F.lances.filter((l) => l.fim > r[0] && l.ini < r[1]);
+        const golo = dentro.find((l) => l.tipo === 'golo');
+        segs.push({ ini: r[0], fim: r[1], rot: golo ? golo.min + "'" : minuto(r[0]), tipo: golo ? 'golo' : 'lance' });
+      });
+      const pausa = F.pausa;
+      segs.push({ ini: Math.max(0, F.parte - 1.2), fim: F.parte + Math.max(0.6, pausa * 0.6), rot: 'Intervalo', tipo: 'intervalo' });
+      segs.push({ ini: Math.max(0, F.duracao - 3.5), fim: F.duracao, rot: 'Fim do jogo', tipo: 'fim' });
       segs.sort((a, b) => a.ini - b.ini);
       const fund = [];
       for (const s of segs) {
         const u = fund[fund.length - 1];
-        if (u && s.ini <= u.fim + 1.2) { u.fim = Math.max(u.fim, s.fim); if (s.tipo === 'golo') u.tipo = 'golo'; if (u.tipo === 'inicio' || u.tipo === 'fim') u.rot = u.rot; }
+        if (u && s.ini <= u.fim + 1.2) { u.fim = Math.max(u.fim, s.fim); if (s.tipo === 'golo') u.tipo = 'golo'; }
         else fund.push(Object.assign({}, s));
       }
       this.segs = fund;
-      // barra de tempo
-      const barra = this.q('.visual__marcas');
-      barra.innerHTML = '';
-      const pc = (t) => (100 * t / F.duracao).toFixed(3) + '%';
-      this.segs.forEach((s) => {
-        if (s.tipo === 'inicio' || s.tipo === 'fim' || s.tipo === 'intervalo') return;
-        const i = document.createElement('i'); i.className = 'marca marca--lance';
-        i.style.left = pc(s.ini); i.style.width = (100 * (s.fim - s.ini) / F.duracao).toFixed(3) + '%';
-        barra.appendChild(i);
-      });
-      const meio = document.createElement('i'); meio.className = 'marca marca--meio'; meio.style.left = pc(F.parte); barra.appendChild(meio);
-      let anterior = [0, 0];
-      F.placar.forEach((p, k) => {
-        if (k === 0) return;
-        const d = document.createElement('i'); d.className = 'marca marca--golo marca--golo-' + (p.g[0] > anterior[0] ? 'eu' : 'adv');
-        d.style.left = pc(p.t); barra.appendChild(d); anterior = p.g;
-      });
-      this.q('.visual__slider').setAttribute('aria-valuemax', String(Math.round(F.duracao)));
       this.q('.visual__eq--eu').textContent = this.nomeEu;
       this.q('.visual__eq--adv').textContent = this.nomeAdv;
       this._escolherSegmento();
@@ -155,19 +143,6 @@
       on('[data-vis="ver-so-resultado"]', () => this._revelar(true));
       this.el.querySelectorAll('[data-vis-vel]').forEach((b) => b.addEventListener('click', () => this._velocidade(+b.dataset.visVel)));
       this.el.querySelectorAll('[data-vis-modo]').forEach((b) => b.addEventListener('click', () => this._modo(b.dataset.visModo)));
-      const slider = this.q('.visual__slider');
-      if (slider) {
-        const posicao = (ev) => {
-          const r = slider.getBoundingClientRect();
-          return Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * (this.f ? this.f.duracao : 0);
-        };
-        let arrasta = false;
-        slider.addEventListener('pointerdown', (ev) => { if (!this.f) return; arrasta = true; slider.setPointerCapture(ev.pointerId); this._procurar(posicao(ev)); });
-        slider.addEventListener('pointermove', (ev) => { if (arrasta) this._procurar(posicao(ev)); });
-        const solta = () => { arrasta = false; };
-        slider.addEventListener('pointerup', solta); slider.addEventListener('pointercancel', solta);
-        slider.addEventListener('keydown', (ev) => this._tecla(ev));
-      }
       const quadro = this.q('.visual__quadro');
       if (quadro) quadro.addEventListener('keydown', (ev) => this._tecla(ev));
       if (this.cv) this.cv.addEventListener('click', () => { if (this.f && !this.acabou) this._alternar(); });
@@ -311,6 +286,7 @@
     _terminar(saltou) {
       this.playing = false;
       this.acabou = true;
+      if (this.f) this._hud();                                       // o marcador e o relógio acabam certos mesmo sem um quadro novo
       this.el.classList.add('visual--terminada');
       this.q('.visual__fimjogo').hidden = false;
       this._atualizarBotoes();
@@ -353,9 +329,7 @@
     _avancar(dt) {
       const F = this.f;
       if (this.corte) { this._passoDoCorte(dt); return; }
-      let fator = this.vel;
-      if (this.modo === 'completo' && this.vel <= 2 && F.emMorto(this.t)) fator *= 4;     // tempos mortos passam depressa
-      let novo = this.t + dt * fator;
+      let novo = this.t + dt * this.vel;
 
       // intervalo: pára sozinho
       if (!this.intervaloFeito && this.t < F.parte && novo >= F.parte) {
@@ -431,14 +405,14 @@
       // relógio
       const s = F.segundosDeJogo(t);
       const rel = `${pad(Math.floor(s / 60))}:${pad(Math.floor(s % 60))}`;
-      const pausa = F.duracao - 3000;
+      const pausa = F.pausa;
       let parte = t < F.parte ? '1.ª parte' : (t < F.parte + pausa ? 'Intervalo' : '2.ª parte');
       if (this.acabou) parte = 'Fim do jogo';
       const relEl = this.q('.visual__relogio'), parteEl = this.q('.visual__parte');
       if (relEl.textContent !== rel) relEl.textContent = rel;
       if (parteEl.textContent !== parte) parteEl.textContent = parte;
       // comentário
-      const tx = F.textoEm(t, 7);
+      const tx = F.textoEm(t, 4);
       const chaveT = tx ? tx.t + '|' + tx.texto : '';
       if (chaveT !== this.ultimoTextoChave) {
         this.ultimoTextoChave = chaveT;
@@ -449,7 +423,7 @@
       // golos: letreiro e festa na bancada
       let golo = null;
       for (let i = F.placar.length - 1; i >= 1; i--) { if (F.placar[i].t <= t) { golo = F.placar[i]; break; } }
-      const emGolo = golo && t - golo.t < 5.0 ? golo : null;
+      const emGolo = golo && t - golo.t < 3.4 ? golo : null;
       const chaveB = emGolo ? String(emGolo.t) : '';
       if (chaveB !== this.bannerChave) {
         this.bannerChave = chaveB;
@@ -466,7 +440,7 @@
           if (an && texto) an.textContent = texto.texto;
         } else b.hidden = true;
       }
-      this.cena.festa(golo && t - golo.t < 7 ? golo.t + 7 : -1);
+      this.cena.festa(golo && t - golo.t < 4.2 ? golo.t + 4.2 : -1);
       // corte (fade) e legenda do minuto
       const corte = this.q('.visual__corte');
       if (this.corte) {
@@ -476,12 +450,6 @@
         if (c.rotulo && rot.textContent !== c.rotulo) rot.textContent = c.rotulo;
         if (!c.rotulo) rot.textContent = '';
       }
-      // barra de tempo
-      const pc = 100 * t / F.duracao;
-      this.q('.visual__prog').style.width = pc.toFixed(2) + '%';
-      const sl = this.q('.visual__slider');
-      sl.setAttribute('aria-valuenow', String(Math.round(t)));
-      sl.setAttribute('aria-valuetext', `${rel}, ${parte}`);
     }
 
     destruir() {

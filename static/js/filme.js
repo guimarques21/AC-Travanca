@@ -86,6 +86,10 @@
       this.dados = dados;
       this.duracao = dados.dur / 100;
       this.parte = dados.parte / 100;
+      this.pausa = (dados.pausa != null ? dados.pausa : Math.max(0, dados.dur - 300000)) / 100;     // o intervalo (s de filme)
+      // relógio: pares [tempo de filme, segundos de jogo]; o tempo de jogo anda ao ritmo da ação, não ao da parede
+      this.rel = (dados.rel || []).map((x) => [x[0] / 100, x[1] / 10]);
+      this.resumo = (dados.resumo || []).map((x) => [x[0] / 100, x[1] / 100]);
       this.nomes = dados.nomes;
       this.jog = dados.jog;
       this.tr = dados.tr.map((p) => new Trajetoria(p));
@@ -255,10 +259,20 @@
 
     /** Segundos de jogo (sem o intervalo) para escrever o relógio. */
     segundosDeJogo(t) {
-      const pausa = this.duracao - 3000;
-      if (t <= this.parte) return Math.min(t, 1500);
-      if (t <= this.parte + pausa) return 1500;
-      return Math.min(3000, t - pausa);
+      const R = this.rel;
+      if (!R.length) {                                              // filme sem tabela: relógio linear
+        const pausa = this.pausa;
+        if (t <= this.parte) return Math.min(t, 1500);
+        if (t <= this.parte + pausa) return 1500;
+        return Math.min(3000, t - pausa);
+      }
+      if (t <= R[0][0]) return R[0][1];
+      const n = R.length;
+      if (t >= R[n - 1][0]) return R[n - 1][1];
+      let lo = 0, hi = n - 1;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (R[m][0] <= t) lo = m; else hi = m; }
+      const a = R[lo], b = R[hi];
+      return b[0] - a[0] < 1e-9 ? a[1] : a[1] + (b[1] - a[1]) * (t - a[0]) / (b[0] - a[0]);
     }
 
     emMorto(t) {

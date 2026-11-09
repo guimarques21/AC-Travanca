@@ -82,16 +82,36 @@
   </section>
 
   <section class="fim__bloco" aria-labelledby="fim-equipas">
-    <h2 class="fim__h2" id="fim-equipas">As duas equipas</h2>
-    <p class="nota fim__nota">Agora que o jogo acabou, já se pode ver como cada um jogou.</p>
+    <h2 class="fim__h2" id="fim-equipas">Notas dos jogadores</h2>
+    {% if fim.mvp %}
+    <div class="mvp mvp--{{ 'eu' if fim.mvp.meu else 'adv' }}" role="group" aria-label="MVP do jogo: {{ fim.mvp.nome }}, nota {{ fim.mvp.nota_txt }}">
+      <span class="mvp__estrela" aria-hidden="true">★</span>
+      <span class="mvp__corpo">
+        <span class="mvp__etq">MVP do jogo</span>
+        <strong class="mvp__nome">{{ fim.mvp.nome }}</strong>
+        <span class="mvp__equipa">{{ fim.mvp.equipa }}{% if fim.mvp.meu %} (a tua equipa){% endif %} · {{ fim.mvp.posicao }}</span>
+        {% if fim.mvp.destaques %}<span class="mvp__det">{{ fim.mvp.destaques|join(' · ') }}</span>{% endif %}
+      </span>
+      <span class="mvp__nota" aria-hidden="true">{{ fim.mvp.nota_txt }}</span>
+    </div>
+    {% endif %}
+    <p class="nota fim__nota">A nota (de 0 a 10) conta o que cada um fez: golos, assistências, passes, defesas, desarmes… e o que a equipa sofreu.</p>
     <div class="fim__equipas">
       {% for e in (eu, adv) %}
       <div class="fim__equipa fim__equipa--{{ 'eu' if loop.first else 'adv' }}">
         <h3 class="fim__h3">{{ e.treinador }}{% if loop.first %} (tu){% endif %} <span>{{ e.esquema }} · {{ e.estilo_nome }}</span></h3>
         <ul class="fim__jogadores">
           {% for j in e.jogadores %}
-          <li><span class="fim__jnome">{{ j.nome }}</span> <span class="fim__jpos">{{ j.posicao }} · {{ j.funcao_nome }}</span>
-            {% if j.nome == e.livres %}<span class="fim__etq">livres</span>{% endif %}{% if j.nome == e.cantos %}<span class="fim__etq">cantos</span>{% endif %}</li>
+          <li class="fim__j{% if j.mvp %} fim__j--mvp{% endif %}">
+            <span class="fim__jtopo">
+              <span class="fim__jnome">{{ j.nome }}</span>
+              {% if j.mvp %}<span class="fim__etq fim__etq--mvp">★ MVP</span>{% endif %}
+              {% if j.nome == e.livres %}<span class="fim__etq">livres</span>{% endif %}{% if j.nome == e.cantos %}<span class="fim__etq">cantos</span>{% endif %}
+            </span>
+            <span class="fim__jpos">{{ j.posicao }} · {{ j.funcao_nome }}</span>
+            {% if j.destaques %}<span class="fim__jdet">{{ j.destaques|join(' · ') }}</span>{% endif %}
+            <span class="nota-j nota-j--{{ j.classe }}" role="img" aria-label="Nota {{ j.nota_txt }} em 10">{{ j.nota_txt }}</span>
+          </li>
           {% endfor %}
         </ul>
       </div>

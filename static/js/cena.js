@@ -353,9 +353,9 @@
       const alvo = Math.atan2(fr[1], fr[0]);
       if (reset) { a.ang = alvo; a.vel = sp; }
       else {
-        const d = angDif(a.ang, alvo), max = 8.5 * dt;
-        a.ang += lim(d * Math.min(1, 11 * dt), -max, max);
-        a.vel += (sp - a.vel) * Math.min(1, 9 * dt);
+        const d = angDif(a.ang, alvo), max = 15 * dt;
+        a.ang += lim(d * Math.min(1, 16 * dt), -max, max);
+        a.vel += (sp - a.vel) * Math.min(1, 14 * dt);
         a.fase += Math.min(a.vel, 9) * Math.min(dt, 0.1) * 2.3;
       }
       a.vx = v[0]; a.vy = v[1]; a.sp = sp;
@@ -761,12 +761,12 @@
       this.janela = Math.min(COMP + 6, Math.max(this.janelaBase, this.W * this.cam.L / (3.0 * this.H)));
       let alvoCam = COMP / 2;
       if (this.janela < COMP + 4) {
-        const fut = F.bolaNucleo(t + 0.9, this._bn);
+        const fut = F.bolaNucleo(t + 0.35, this._bn);
         const fx = fut[3] > 0 ? fut[0] : bx;
-        alvoCam = lim(0.55 * bx + 0.45 * fx, this.janela / 2 - 2.5, COMP - this.janela / 2 + 2.5);
+        alvoCam = lim(0.62 * bx + 0.38 * fx, this.janela / 2 - 2.5, COMP - this.janela / 2 + 2.5);
       }
       if (reset) this.camX = alvoCam;
-      else this.camX += (alvoCam - this.camX) * Math.min(1, 2.4 * Math.min(dt, 0.1));
+      else this.camX += (alvoCam - this.camX) * Math.min(1, 5.0 * Math.min(dt, 0.1));
       this.cam.ajustar(W, H, this.janela, this.camX, 0.885);
 
       this._atualizarArbitro(F, t, dt, reset, bx, by);
